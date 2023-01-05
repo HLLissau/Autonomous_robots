@@ -71,6 +71,7 @@ typedef struct {              // input signals
     double x, y, theta, theta_b;                      // tilført 3.2
     double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
     int len;                                          // Tilført 5.using zoneobst with square
+    double delta_v;                                   // Tilført 7.1
     // internal variables
     int left_enc_old, right_enc_old;
 } odotype;
@@ -473,7 +474,7 @@ void update_motcon(motiontype *p) {
             break;
 
         case mot_turn:
-            double delta_v = K * (odo.theta_b-odo.theta);
+            odo.delta_v = K * (odo.theta_b-odo.theta);
             d_turn = ((odo.theta_b - odo.theta) * (odo.w / 2));
             if (p->angle > 0) {
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn)) {
@@ -484,7 +485,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
 
-                    if (p->motorspeed_r > delta_v) {
+                    if (p->motorspeed_r > odo.delta_v) {
                         p->motorspeed_r = p->speedcmd / 2;
                         p->motorspeed_l = -p->speedcmd / 2;
                     }
