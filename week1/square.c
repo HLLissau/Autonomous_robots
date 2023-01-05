@@ -451,9 +451,9 @@ void update_motcon(motiontype *p) {
             // 7.1 we change the motors to stay on course
 
             p->motorspeed_l = p->motorspeed_l-odo.delta_v;
-            p->motorspeed_r = p->motorspeed_l+odo.delta_v;
-            if (p->motorspeed_l<0) p->motorspeed_l=0;
-            if (p->motorspeed_r<0) p->motorspeed_r=0;
+            p->motorspeed_r = p->motorspeed_r+odo.delta_v;
+            //if (p->motorspeed_l<0) p->motorspeed_l=0;
+            //if (p->motorspeed_r<0) p->motorspeed_r=0;
             // 3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -468,13 +468,13 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_l = p->speedcmd;
+                    p->motorspeed_l = p->speedcmd+odo.delta_v;
                 }
 
                 if (p->motorspeed_r < p->speedcmd) {
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_r = p->speedcmd;
+                    p->motorspeed_r = p->speedcmd+odo.delta_v;
                 }
             }
             break;
