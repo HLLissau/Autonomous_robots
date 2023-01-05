@@ -449,8 +449,8 @@ void update_motcon(motiontype *p) {
             break;
         case mot_move:
             // 7.1 we change the motors to stay on course
-            p->motorspeed_l = p->motorspeed_l+odo.delta_v;
-            p->motorspeed_r = p->motorspeed_l-odo.delta_v;
+            p->motorspeed_l = p->motorspeed_l-odo.delta_v;
+            p->motorspeed_r = p->motorspeed_l+odo.delta_v;
             // 3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
