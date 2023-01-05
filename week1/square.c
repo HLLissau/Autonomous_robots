@@ -452,6 +452,8 @@ void update_motcon(motiontype *p) {
 
             p->motorspeed_l = p->motorspeed_l-odo.delta_v;
             p->motorspeed_r = p->motorspeed_l+odo.delta_v;
+            if (p->motorspeed_l<0) p->motorspeed_l=0;
+            if (p->motorspeed_r<0) p->motorspeed_r=0;
             // 3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
