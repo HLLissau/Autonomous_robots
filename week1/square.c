@@ -614,11 +614,9 @@ void writeToFile(){
   FILE *f2;
 	f1=fopen("/home/smr/offline/square/log.dat","w");
   f2=fopen("/home/smr/offline/square/laserlog.dat","w");
-
 	for (int i=0; i<arrayCounter;i++){
 		fprintf(f1,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[1][i],array[2][i],array[3][i],array[4][i],array[5][i]);
-		fprintf(f2,"%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",array[6][i],array[7][i],array[8][i],array[9][i],array[10][i],array[11][i],array[12][i],array[13][i],array[14][i]);
-	
+		fprintf(f2,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[6][i],array[7][i],array[8][i],array[9][i],array[10][i],array[11][i],array[12][i],array[13][i],array[14][i]);
   }
 
 	fclose(f1);
