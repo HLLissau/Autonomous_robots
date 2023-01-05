@@ -503,7 +503,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
 
-                    if (p->motorspeed_l > p->speedcmd / 2) {
+                    if (p->motorspeed_l > odo.delta_v) {
                         p->motorspeed_r = -p->speedcmd / 2;
                         p->motorspeed_l = p->speedcmd / 2;
                     }
