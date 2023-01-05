@@ -441,7 +441,7 @@ void update_motcon(motiontype *p) {
 
     double d;
     double d_turn;
-    odo.delta_v = K * (odo.theta_b-odo.theta)*0.4;
+    odo.delta_v = K * (odo.theta_b-odo.theta);
     switch (p->curcmd) {
         case mot_stop:
             p->motorspeed_l = 0;
