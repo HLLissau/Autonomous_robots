@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 10
+#define K 0.1
 
 typedef struct {              // input signals
     int left_enc, right_enc;  // encoderticks
@@ -449,8 +449,8 @@ void update_motcon(motiontype *p) {
             break;
         case mot_move:
             // 7.1 we change the motors to stay on course
-            p->motorspeed_l = p->motorspeed_l-odo.delta_v;
-            p->motorspeed_r = p->motorspeed_l+odo.delta_v;
+            p->motorspeed_l = p->motorspeed_l+odo.delta_v;
+            p->motorspeed_r = p->motorspeed_l-odo.delta_v;
             // 3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
