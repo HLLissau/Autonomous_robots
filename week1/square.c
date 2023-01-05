@@ -594,7 +594,7 @@ void sm_update(smtype *p){
 }
 
 int arrayCounter=0;
-float array[7][10000];
+float array[16][10000];
 void sm_saveArray(){
 	array[0][arrayCounter] = mission.time;
 	array[1][arrayCounter] = mot.motorspeed_l;
@@ -602,17 +602,24 @@ void sm_saveArray(){
 	array[3][arrayCounter]=odo.x;
 	array[4][arrayCounter]=odo.y;
 	array[5][arrayCounter]=odo.theta;
-  array[6][arrayCounter]=laserpar[4];
+  for (int i =0, i<10;i++){
+   array[5+i][arrayCounter]=laserpar[i];
+  }
+
 	arrayCounter++;
 }
 
 void writeToFile(){
 	FILE *f1;
+  FILE *f2;
 	f1=fopen("/home/smr/offline/square/log.dat","w");
+  f2=fopen("/home/smr/offline/square/laserlog.dat","w");
 
 	for (int i=0; i<arrayCounter;i++){
-		fprintf(f1,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[1][i],array[2][i],array[3][i],array[4][i],array[5][i],array[6][i]);
-	}
+		fprintf(f1,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[1][i],array[2][i],array[3][i],array[4][i],array[5][i]);
+		fprintf(f2,"%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",array[6][i],array[7][i],array[8][i],array[9][i],array[10][i],array[11][i],array[12][i],array[13][i],array[14][i],array[15][i]);
+	
+  }
 
 	fclose(f1);
 }
