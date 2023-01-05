@@ -509,8 +509,7 @@ if (p->cmd !=0){
      case mot_turn:
 
 				d_turn = ((odo.theta_b-odo.theta)*(odo.w/2));
-       	printf("%f \n",sqrt(2*ACCELLERATION*fabs(d_turn)));
-				if (p->angle>0){
+       	if (p->angle>0){
           if (p->motorspeed_r > sqrt(2*ACCELLERATION*d_turn)) {  
 	  		    p->motorspeed_r=p->motorspeed_r-TICK_ACCELLERATION;
 		  	    p->motorspeed_l=p->motorspeed_l+TICK_ACCELLERATION;
@@ -595,7 +594,7 @@ void sm_update(smtype *p){
 }
 
 int arrayCounter=0;
-float array[6][10000];
+float array[7][10000];
 void sm_saveArray(){
 	array[0][arrayCounter] = mission.time;
 	array[1][arrayCounter] = mot.motorspeed_l;
@@ -603,7 +602,7 @@ void sm_saveArray(){
 	array[3][arrayCounter]=odo.x;
 	array[4][arrayCounter]=odo.y;
 	array[5][arrayCounter]=odo.theta;
-  array[6][arrayCounter]=odo.len;
+  array[6][arrayCounter]=laserpar[4];
 	arrayCounter++;
 }
 
