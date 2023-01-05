@@ -476,12 +476,13 @@ void update_motcon(motiontype *p) {
         case mot_turn:
             odo.delta_v = K * (odo.theta_b-odo.theta);
             d_turn = ((odo.theta_b - odo.theta) * (odo.w / 2));
+            
             if (p->angle > 0) {
+                
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn)) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-                } else if (odo.theta * p->w <
-                           odo.theta_b * p->w) {  // p->right_pos-p->startpos
+                } else if (odo.theta * p->w < odo.theta_b * p->w) {  // p->right_pos-p->startpos
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
 
@@ -513,7 +514,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_r = 0;
                     p->finished = 1;
                 }
-            }
+            } 
 
             break;
     }
@@ -537,10 +538,6 @@ int turn(double angle, double speed, int time) {
         return 0;
     } else
         return mot.finished;
-}
-
-int angular_controller(double phi, double phi_odo, double k) {
-    double delta_phi = k * (phi - phi_odo);
 }
 
 void sm_update(smtype *p) {
