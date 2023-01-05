@@ -441,13 +441,16 @@ void update_motcon(motiontype *p) {
 
     double d;
     double d_turn;
+    odo.delta_v = K * (odo.theta_b-odo.theta);
     switch (p->curcmd) {
         case mot_stop:
             p->motorspeed_l = 0;
             p->motorspeed_r = 0;
             break;
         case mot_move:
-
+            // 7.1 we change the motors to stay on course
+            p->motorspeed_l = p->motorspeed_l+odo.delta_v;
+            p->motorspeed_r = p->motorspeed_l-odo.delta_v;
             // 3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -474,7 +477,6 @@ void update_motcon(motiontype *p) {
             break;
 
         case mot_turn:
-            odo.delta_v = K * (odo.theta_b-odo.theta);
             d_turn = ((odo.theta_b - odo.theta) * (odo.w / 2));
             
             if (p->angle > 0) {
