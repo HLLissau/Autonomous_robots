@@ -78,6 +78,7 @@ typedef struct{ //input signals
 		double right_pos,left_pos;
 		double x,y,theta,theta_b;  // tilført 3.2
 		double Delta_theta, Delta_U,delta_Ur,delta_Ul; // tilført 3.2
+    int len; //Tilført 5.using zoneobst with square
 		// internal variables
 		int left_enc_old, right_enc_old;
 		} odotype;
@@ -283,7 +284,8 @@ int main(int argc, char ** argv)
    if (lmssrv.connected){
      xmllaser=xml_in_init(4096,32);
      printf(" laserserver xml initialized \n");
-     len=sprintf(buf,"push  t=0.2 cmd='mrcobst width=0.4'\n");
+     len=sprintf(buf,”scanpush cmd='zoneobst'\n”);
+     odo.len=len;
      send(lmssrv.sockfd,buf,len,0);
    }
 
@@ -601,6 +603,7 @@ void sm_saveArray(){
 	array[3][arrayCounter]=odo.x;
 	array[4][arrayCounter]=odo.y;
 	array[5][arrayCounter]=odo.theta;
+  array[6][arrayCounter]=odo.len;
 	arrayCounter++;
 }
 
@@ -609,7 +612,7 @@ void writeToFile(){
 	f1=fopen("/home/smr/offline/square/log.dat","w");
 
 	for (int i=0; i<arrayCounter;i++){
-		fprintf(f1,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[1][i],array[2][i],array[3][i],array[4][i],array[5][i]);
+		fprintf(f1,"%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",(int) array[0][i],array[1][i],array[2][i],array[3][i],array[4][i],array[5][i],array[6][i]);
 	}
 
 	fclose(f1);
