@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.4  //
+#define K 0.04  //
 
 typedef struct {              // input signals
     int left_enc, right_enc;  // encoderticks
