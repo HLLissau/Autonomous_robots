@@ -449,7 +449,7 @@ void update_motcon(motiontype *p) {
         p->cmd = 0;
     }
 
-    double d;
+    double d= p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     double d_turn;
 
     switch (p->curcmd) {
@@ -465,7 +465,7 @@ void update_motcon(motiontype *p) {
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
             // if (p->motorspeed_r<0) p->motorspeed_r=0;
             //  3.5)
-            d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
+
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
