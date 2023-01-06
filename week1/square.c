@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.4 //
+#define K 0.4  //
 
 typedef struct {              // input signals
     int left_enc, right_enc;  // encoderticks
@@ -68,7 +68,7 @@ typedef struct {              // input signals
     double cr, cl;  // meters per encodertick
                     // output signals
     double right_pos, left_pos;
-    double x, y, theta, theta_b;                      // tilført 3.2
+    double x, y, theta, theta_ref;                      // tilført 3.2
     double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
     int len;                                          // Tilført 5.using zoneobst with square
     double delta_v;                                   // Tilført 7.1
@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
                 break;
 
             case ms_turn:
-                if (mission.time == 0) odo.theta_b = (angle + odo.theta);
+                if (mission.time == 0) odo.theta_ref = (angle + odo.theta);
                 if (turn(angle, 0.3, mission.time)) {
                     n = n - 1;
                     if (n == 0)
@@ -441,7 +441,7 @@ void update_motcon(motiontype *p) {
 
     double d;
     double d_turn;
-    odo.delta_v = K * (odo.theta_b-odo.theta);
+    odo.delta_v = K * (odo.theta_ref - odo.theta);
     switch (p->curcmd) {
         case mot_stop:
             p->motorspeed_l = 0;
@@ -450,11 +450,11 @@ void update_motcon(motiontype *p) {
         case mot_move:
             // 7.1 we change the motors to stay on course
 
-            p->motorspeed_l = p->motorspeed_l-odo.delta_v;
-            p->motorspeed_r = p->motorspeed_r+odo.delta_v;
-            //if (p->motorspeed_l<0) p->motorspeed_l=0;
-            //if (p->motorspeed_r<0) p->motorspeed_r=0;
-            // 3.5)
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
                 p->finished = 1;
@@ -468,30 +468,29 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_l = p->speedcmd-odo.delta_v;
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
                 }
 
                 if (p->motorspeed_r < p->speedcmd) {
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_r = p->speedcmd+odo.delta_v;
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
                 }
             }
             break;
 
         case mot_turn:
-            d_turn = ((odo.theta_b - odo.theta) * (odo.w / 2));
-            
+            d_turn = ((odo.theta.ref - odo.theta) * (odo.w / 2));
+
             if (p->angle > 0) {
-                
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn)) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-                } else if (odo.theta * p->w < odo.theta_b * p->w) {  // p->right_pos-p->startpos
+                } else if (odo.theta * p->w < odo.theta_ref * p->w) {  // p->right_pos-p->startpos
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
 
-                    if (p->motorspeed_r > p->speedcmd/2) {
+                    if (p->motorspeed_r > p->speedcmd / 2) {
                         p->motorspeed_r = p->speedcmd / 2;
                         p->motorspeed_l = -p->speedcmd / 2;
                     }
@@ -504,11 +503,11 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * fabs(d_turn))) {  // same speed for each motor due to fwd
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-                } else if (odo.theta * p->w > (odo.theta_b * p->w)) {
+                } else if (odo.theta * p->w > (odo.theta_ref * p->w)) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
 
-                    if (p->motorspeed_l > p->speedcmd/2) {
+                    if (p->motorspeed_l > p->speedcmd / 2) {
                         p->motorspeed_r = -p->speedcmd / 2;
                         p->motorspeed_l = p->speedcmd / 2;
                     }
@@ -519,7 +518,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_r = 0;
                     p->finished = 1;
                 }
-            } 
+            }
 
             break;
     }
