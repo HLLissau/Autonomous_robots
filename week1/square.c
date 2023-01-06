@@ -489,14 +489,17 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                                    // 7.3
+             printf("gogogo! /n");
             odo.delta_v = (K * (odo.theta_ls - odo.theta)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
+                 printf("1gogogo! /n");
                 p->finished = 1;
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
             } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) { //deceleration
+                 printf("2gogogo! /n");
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 }
@@ -504,6 +507,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                 }
             } else {          // acceleration
+             printf("gogogo!/n");
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
@@ -582,7 +586,7 @@ int turn(double angle, double speed, int time) {
         return mot.finished;
 }
 int follow_line(double dist,double speed,int time){
-    printf("gogogo! %d",time);
+   
     if(time==0){
         mot.cmd= mot_follow_line;
         mot.speedcmd=speed;
