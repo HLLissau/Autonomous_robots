@@ -101,9 +101,7 @@ typedef struct {  // input
     double startpos;
 } motiontype;
 
-enum { mot_stop = 1,
-       mot_move,
-       mot_turn };
+enum { mot_stop = 1, mot_move,mot_follow_line ,mot_turn };
 
 void update_motcon(motiontype *p);
 
@@ -144,10 +142,7 @@ odotype odo;
 smtype mission;
 motiontype mot;
 
-enum { ms_init,
-       ms_fwd,
-       ms_turn,
-       ms_end };
+enum { ms_init, ms_fwd, ms_turn, ms_end };
 
 int main(int argc, char **argv) {
     int n = 0, arg, time = 0, opt, calibration;
@@ -441,7 +436,7 @@ void update_motcon(motiontype *p) {
 
     double d;
     double d_turn;
-    odo.delta_v = (K * (odo.theta_ref - odo.theta))/2;
+
     switch (p->curcmd) {
         case mot_stop:
             p->motorspeed_l = 0;
@@ -449,7 +444,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_move:
             // 7.1 we change the motors to stay on course
-
+            odo.delta_v = (K * (odo.theta_ref - odo.theta))/2;
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
@@ -478,6 +473,9 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
+        case mot_follow_line:
+
+
 
         case mot_turn:
             d_turn = ((odo.theta.ref - odo.theta) * (odo.w / 2));
