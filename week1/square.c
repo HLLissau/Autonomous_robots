@@ -502,7 +502,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.theta_ref - odo.location_line_sensor)) / 2;  // calculate offset
+            odo.delta_v = (K * (odo.theta_ref - (odo.location_line_sensor-4.5))) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
