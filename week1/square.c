@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
                 n = 4;
                 dist = 1;
                 angle = -90.0 / 180 * M_PI;
-                mission.state = ms_fwd;
+                mission.state = ms_follow_line;
                 break;
 
             case ms_fwd:
@@ -322,10 +322,7 @@ int main(int argc, char **argv) {
                 // if (fwd(2,0.2,mission.time))  mission.state=ms_end;
                 // if (fwd(2,0.4,mission.time))  mission.state=ms_end;
                 // if (fwd(2,0.6,mission.time))  mission.state=ms_end;
-                //7.3
-                if (mission.time==0) odo.theta_ls=0;
-                if (mission.time==1000) odo.theta_ls=30;
-                if(follow_line(dist,0.3,mission.time)) mission.state=ms_end;
+
                 break;
 
             case ms_turn:
@@ -339,7 +336,10 @@ int main(int argc, char **argv) {
                 }
                 break;
             case ms_follow_line:
-
+                //7.3
+                if (mission.time==0) odo.theta_ls=0;
+                if (mission.time==1000) odo.theta_ls=30;
+                if(follow_line(dist,0.3,mission.time)) mission.state=ms_end;
 
                 break;
 
@@ -489,7 +489,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                                    // 7.3
-             printf("gogogo! \n");
+            printf("gogogo! \n");
             odo.delta_v = (K * (odo.theta_ls - odo.theta)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
