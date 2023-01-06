@@ -504,7 +504,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                               // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - 4.555)*0.5) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = -(K * (odo.COM - 4.555)*0.5) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -630,7 +630,7 @@ void calibrateLinesensor() {
     int loc = 0;
     odo.location_line_sensor = 1;
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
-        jarray[i] = line_array[i] / 255;
+        jarray[i] = 1-(line_array[i] / 255); //setting higher mass for black
     }
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
         if (jarray[c] < jarray[loc]) {
