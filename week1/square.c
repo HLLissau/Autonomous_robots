@@ -642,7 +642,7 @@ void calibrateLinesensor() {
 }
 
 int arrayCounter = 0;
-float array[25][10000];
+float array[26][10000];
 void sm_saveArray() {
     array[0][arrayCounter] = mission.time;
     array[1][arrayCounter] = mot.motorspeed_l;
