@@ -702,7 +702,7 @@ void writeToFile() {
                 "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d %.3f \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i], array[23][i], (int)array[24][i]),array[25][i]);
+                array[22][i], array[23][i], (int)array[24][i],array[25][i]);
     }
 
     fclose(f1);
