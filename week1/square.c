@@ -78,7 +78,7 @@ typedef struct {                             // input signals
     int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
-    float COM;                                         // 7.3
+    float com;                                         // 7.3
 } odotype;
 
 void reset_odo(odotype *p);
@@ -666,9 +666,9 @@ void sm_saveArray() {
     arrayCounter++;
 }
 float center_of_mass(float intensity_array);
-
+/*
 float array_with_intensities[] = {1,1,1,1,255,255,1,1};
-com = center_of_mass(array_with_intensities);
+odo.com = center_of_mass(array_with_intensities);
 
 float center_of_mass(float intensity_array) {
 
@@ -693,7 +693,7 @@ float center_of_mass(float intensity_array) {
     return num/den;
 
 }
-
+*/
 void writeToFile() {
     FILE *f1;
     FILE *f2;
