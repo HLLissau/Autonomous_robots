@@ -60,7 +60,10 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 0.04  //
+#define LINE_SENSOR_DATA_LENGTH 8
 
+double line_array[LINE_SENSOR_DATA_LENGTH];        // variable som line sensor data skal lægges ind i 7.1
+double jarray[LINE_SENSOR_DATA_LENGTH]; // normalisered værdi af line sensor.
 typedef struct {              // input signals
     int left_enc, right_enc;  // encoderticks
     // parameters
@@ -72,6 +75,7 @@ typedef struct {              // input signals
     double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
     int len;                                          // Tilført 5.using zoneobst with square
     double delta_v;                                   // Tilført 7.1
+    int location;
     // internal variables
     int left_enc_old, right_enc_old;
 } odotype;
@@ -80,6 +84,8 @@ void reset_odo(odotype *p);
 void update_odo(odotype *p);
 void writeToFile();
 void sm_saveArray();
+void calibrateLinesensor();
+void read_linesensor();
 
 /********************************************
  * Motion control
@@ -415,7 +421,8 @@ void update_odo(odotype *p) {
 
 void update_motcon(motiontype *p) {
     sm_saveArray(); /*ADDED*/
-
+    read_linesensor(); // added 7.2
+    calibrateLinesensor(); // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     if (p->cmd != 0) {
         p->finished = 0;
         switch (p->cmd) {
@@ -553,6 +560,41 @@ void sm_update(smtype *p) {
     }
 }
 
+void read_linesensor(){
+    for (int count=0;count<LINE_SENSOR_DATA_LENGTH;count++)
+			{
+				line_array[count]=linesensor->data[count];
+                          
+			}
+			
+}
+
+
+
+// kan testes med følgende
+// float arraybum[] = {1,128,255,255,200,100,128,55};
+// calibrateLinesensor(arraybum);
+
+void calibrateLinesensor() {
+			int loc=0;
+			odo.location_line_sensor=0;
+    for(int i = 0; i < LINE_SENSOR_DATA_LENGTH ; i++)
+			{
+        jarray[i] = line_array[i]/255;
+	        for(int c=1;c<LINE_SENSOR_DATA_LENGTH;c++)
+					{
+						if(jarray[c]<jarray[loc])
+								{
+									odo.location_line_sensor=c;
+								}
+								
+					}
+
+			}
+		//printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
+}
+
+
 int arrayCounter = 0;
 float array[16][10000];
 void sm_saveArray() {
@@ -565,6 +607,9 @@ void sm_saveArray() {
     for (int i = 0; i < 9; i++) {
         array[6 + i][arrayCounter] = laserpar[i];
     }
+     for (int i = 0; i < 8; i++) {
+        array[16 + i][arrayCounter] = laserpar[i];
+    }
 
     arrayCounter++;
 }
@@ -574,6 +619,7 @@ void writeToFile() {
     FILE *f2;
     f1 = fopen("/home/smr/offline/square/log.dat", "w");
     f2 = fopen("/home/smr/offline/square/laserlog.dat", "w");
+
     for (int i = 0; i < arrayCounter; i++) {
         fprintf(f1, "%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f \n", (int)array[0][i],
                 array[1][i], array[2][i], array[3][i], array[4][i],
