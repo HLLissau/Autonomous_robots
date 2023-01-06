@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
                 if (mission.time == 0) odo.theta_ls = 0;
 
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line(dist, 0.3, mission.time)) mission.state = ms_end;
+                if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
                 break;
 
