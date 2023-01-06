@@ -642,7 +642,7 @@ void calibrateLinesensor() {
 }
 
 int arrayCounter = 0;
-float array[24][10000];
+float array[25][10000];
 void sm_saveArray() {
     array[0][arrayCounter] = mission.time;
     array[1][arrayCounter] = mot.motorspeed_l;
@@ -656,6 +656,8 @@ void sm_saveArray() {
     for (int i = 0; i < 8; i++) {
         array[15 + i][arrayCounter] = laserpar[i];
     }
+        array[24][arrayCounter] = odo.location_line_sensor;
+    
 
     arrayCounter++;
 }
@@ -663,10 +665,10 @@ void sm_saveArray() {
 void writeToFile() {
     FILE *f1;
     FILE *f2;
-    FILE *f2;
+    FILE *f3;
     f1 = fopen("/home/smr/offline/square/log.dat", "w");
     f2 = fopen("/home/smr/offline/square/laserlog.dat", "w");
-    f2 = fopen("/home/smr/offline/square/linelog.dat", "w");
+    f3 = fopen("/home/smr/offline/square/linelog.dat", "w");
 
     for (int i = 0; i < arrayCounter; i++) {
         fprintf(f1, "%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f \n", (int)array[0][i],
@@ -678,10 +680,10 @@ void writeToFile() {
                 array[9][i], array[10][i], array[11][i], array[12][i],
                 array[13][i], array[14][i]);
         fprintf(f3,
-                "%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \n",
+                "%.5d ,%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f,%.5d \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i], array[23][i]);
+                array[22][i], array[23][i],(int)array[24][i]);
     }
 
     fclose(f1);
