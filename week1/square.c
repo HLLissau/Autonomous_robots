@@ -78,6 +78,7 @@ typedef struct {                             // input signals
     int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
+    float COM;                                         // 7.3
 } odotype;
 
 void reset_odo(odotype *p);
@@ -637,10 +638,12 @@ void calibrateLinesensor() {
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
         if (jarray[c] < jarray[loc]) {
             odo.location_line_sensor = c+1;
+            loc=c; 
         }
     }
     // printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
 }
+
 
 int arrayCounter = 0;
 float array[25][10000];
@@ -661,6 +664,34 @@ void sm_saveArray() {
     
 
     arrayCounter++;
+}
+float center_of_mass(float intensity_array);
+
+//float array_with_intensities[] = {1,1,1,1,255,255,1,1};
+com = center_of_mass(jarray);
+
+float center_of_mass(float intensity_array) {
+
+    float num = 0;
+    float den = 0;
+
+    for(int i = 0; i < LINE_SENSOR_DATA_LENGTH ; i++){
+
+        if(!intensity_array[i] == 0){
+            num = num + ((i+1)intensity_array[i]);
+            den = den + intensity_array[i];
+        } else {
+            num = num + ((i+1)*(1-intensity_array[i]));
+            den = den + (1-intensity_array[i]);
+        }
+
+        printf("num: %.6f\n", num);
+        printf("den: %.6f\n", den);
+
+    }
+
+    return num/den;
+
 }
 
 void writeToFile() {
