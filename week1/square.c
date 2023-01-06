@@ -586,7 +586,7 @@ int turn(double angle, double speed, int time) {
         return mot.finished;
 }
 int follow_line(double dist,double speed,int time){
-   
+    printf("gogogo! %d /n",time);
     if(time==0){
         mot.cmd= mot_follow_line;
         mot.speedcmd=speed;
