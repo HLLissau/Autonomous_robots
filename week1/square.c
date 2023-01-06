@@ -338,7 +338,7 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 //7.3
                 if (mission.time==0) odo.theta_ls=0;
-                if (mission.time%10==0) odo.theta_ls++;
+                if (mission.time%10==0) odo.theta_ls=odo.theta_ls+0.04;
                 if(follow_line(dist,0.3,mission.time)) mission.state=ms_end;
 
                 break;
