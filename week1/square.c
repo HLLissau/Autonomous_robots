@@ -670,7 +670,7 @@ float center_of_mass(float intensity_array);
 //float array_with_intensities[] = {1,1,1,1,255,255,1,1};
 com = center_of_mass(jarray);
 
-float center_of_mass(float intensity_array) {
+float center_of_mass(double intensity_array) {
 
     float num = 0;
     float den = 0;
