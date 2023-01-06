@@ -665,9 +665,9 @@ void sm_saveArray() {
 
     arrayCounter++;
 }
-float center_of_mass(float intensity_array);
+float center_of_mass(double intensity_array);
 
-float array_with_intensities[] = {1,1,1,1,255,255,1,1};
+double array_with_intensities[] = {1,1,1,1,255,255,1,1};
 com = center_of_mass(array_with_intensities);
 
 float center_of_mass(double intensity_array) {
