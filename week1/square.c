@@ -642,7 +642,7 @@ void calibrateLinesensor() {
 }
 
 int arrayCounter = 0;
-float array[26][10000];
+float array[25][10000];
 void sm_saveArray() {
     array[0][arrayCounter] = mission.time;
     array[1][arrayCounter] = mot.motorspeed_l;
@@ -656,8 +656,8 @@ void sm_saveArray() {
     for (int i = 0; i < 8; i++) {
         array[15 + i][arrayCounter] = jarray[i];
     }
-    array[24][arrayCounter] = odo.location_line_sensor;
-    array[25][arrayCounter] = odo.COM;
+    array[23][arrayCounter] = odo.location_line_sensor;
+    array[24][arrayCounter] = odo.COM;
 
     arrayCounter++;
 }
@@ -699,10 +699,10 @@ void writeToFile() {
                 array[9][i], array[10][i], array[11][i], array[12][i],
                 array[13][i], array[14][i]);
         fprintf(f3,
-                "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d %.3f \n",
+                "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d %.3f \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i], array[23][i], (int)array[24][i],array[25][i]);
+                array[22][i],  (int)array[23][i],array[24][i]);
     }
 
     fclose(f1);
