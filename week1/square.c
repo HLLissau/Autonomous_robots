@@ -110,6 +110,7 @@ void update_motcon(motiontype *p);
 
 int fwd(double dist, double speed, int time);
 int turn(double angle, double speed, int time);
+int follow_line(double dist, double speed, int time);
 
 void segfaulthandler(int sig) {
     //    perror(NULL);
@@ -324,7 +325,7 @@ int main(int argc, char **argv) {
                 //7.3
                 if (mission.time==0) odo.theta_ls=0;
                 if (mission.time==1000) odo.theta_ls=30;
-                if(follow_line(dist,0.3,mission.time)) mission.state=ms.end;
+                if(follow_line(dist,0.3,mission.time)) mission.state=ms_end;
                 break;
 
             case ms_turn:
@@ -517,7 +518,7 @@ void update_motcon(motiontype *p) {
             }
 
         case mot_turn:
-            d_turn = ((odo.theta.ref - odo.theta) * (odo.w / 2));
+            d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
 
             if (p->angle > 0) {
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn)) {
@@ -585,7 +586,7 @@ int follow_line(double dist,double speed,int time){
         mot.cmd= mot_follow_line;
         mot.speedcmd=speed;
         mot.dist=dist;
-        return 0
+        return 0;
     } else {
         return mot.finished;
     }
