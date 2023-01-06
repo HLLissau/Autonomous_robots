@@ -513,10 +513,10 @@ void update_motcon(motiontype *p) {
                 p->motorspeed_r = 0;
             } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // deceleration
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION - odo.delta_v;
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION - odo.delta_v*0.1;
                 }
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION + odo.delta_v;
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION + odo.delta_v*0.1;
                 }
             } else {  // acceleration
                 if (p->motorspeed_l < p->speedcmd) {
