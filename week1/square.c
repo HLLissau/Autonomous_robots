@@ -444,6 +444,11 @@ void update_motcon(motiontype *p) {
                     p->startpos = p->left_pos;
                 p->curcmd = mot_turn;
                 break;
+            case mot_follow_line:
+                p->startpos = (p->left_pos + p->right_pos) / 2;
+                p->curcmd = mot_follow_line;
+                break;
+
         }
 
         p->cmd = 0;
