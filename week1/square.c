@@ -68,10 +68,10 @@ typedef struct {              // input signals
     double cr, cl;  // meters per encodertick
                     // output signals
     double right_pos, left_pos;
-    double x, y, theta, theta_ref;                      // tilført 3.2
+    double x, y, theta;                               // tilført 3.2
     double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
     int len;                                          // Tilført 5.using zoneobst with square
-    double delta_v;                                   // Tilført 7.1
+    double delta_v, theta_ref, theta_ls;              // Tilført 7.1
     // internal variables
     int left_enc_old, right_enc_old;
 } odotype;
@@ -101,7 +101,10 @@ typedef struct {  // input
     double startpos;
 } motiontype;
 
-enum { mot_stop = 1, mot_move,mot_follow_line ,mot_turn };
+enum { mot_stop = 1,
+       mot_move,
+       mot_follow_line,
+       mot_turn };
 
 void update_motcon(motiontype *p);
 
@@ -142,7 +145,11 @@ odotype odo;
 smtype mission;
 motiontype mot;
 
-enum { ms_init, ms_fwd, ms_turn, ms_end };
+enum { ms_init,
+       ms_fwd,
+       ms_turn,
+       ms_follow_line,
+       ms_end };
 
 int main(int argc, char **argv) {
     int n = 0, arg, time = 0, opt, calibration;
@@ -308,13 +315,16 @@ int main(int argc, char **argv) {
                 break;
 
             case ms_fwd:
-                if (fwd(dist, 0.3, mission.time)) mission.state = ms_turn;
+                //if (fwd(dist, 0.3, mission.time)) mission.state = ms_turn;
 
                 // 3.3)
                 // if (fwd(2,0.2,mission.time))  mission.state=ms_end;
                 // if (fwd(2,0.4,mission.time))  mission.state=ms_end;
                 // if (fwd(2,0.6,mission.time))  mission.state=ms_end;
-
+                //7.3
+                if (mission.time==0) odo.theta_ls=0;
+                if (mission.time==1000) odo.theta_ls=30;
+                if(follow_line(dist,0.3,mission.time)) mission.state=ms.end;
                 break;
 
             case ms_turn:
@@ -326,6 +336,10 @@ int main(int argc, char **argv) {
                     else
                         mission.state = ms_fwd;
                 }
+                break;
+            case ms_follow_line:
+
+
                 break;
 
             case ms_end:
@@ -444,7 +458,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_move:
             // 7.1 we change the motors to stay on course
-            odo.delta_v = (K * (odo.theta_ref - odo.theta))/2;
+            odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
@@ -473,9 +487,34 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
-        case mot_follow_line:
+        case mot_follow_line:                                    // 7.3
+            odo.delta_v = (K * (odo.theta_ls - odo.theta)) / 2;  // calculate offset
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) { //deceleration
+                if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                }
+                if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                }
+            } else {          // acceleration
+                if (p->motorspeed_l < p->speedcmd) {
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                }
 
-
+                if (p->motorspeed_r < p->speedcmd) { //limit acceration
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                }
+            }
 
         case mot_turn:
             d_turn = ((odo.theta.ref - odo.theta) * (odo.w / 2));
@@ -541,6 +580,18 @@ int turn(double angle, double speed, int time) {
     } else
         return mot.finished;
 }
+int follow_line(double dist,double speed,int time){
+    if(time==0){
+        mot.cmd= mot_follow_line;
+        mot.speedcmd=speed;
+        mot.dist=dist;
+        return 0
+    } else {
+        return mot.finished;
+    }
+
+}
+
 
 void sm_update(smtype *p) {
     if (p->state != p->oldstate) {
