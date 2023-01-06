@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.0004  //
+#define K 0.004  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
@@ -502,7 +502,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.theta_ref - (odo.location_line_sensor-4.5))) / 2;  // calculate offset
+            odo.delta_v = (K * ((odo.location_line_sensor-4.5))) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
