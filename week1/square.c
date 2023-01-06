@@ -77,7 +77,7 @@ typedef struct {                             // input signals
     int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
-    float COM;                                         // 7.3
+    float COM;  // 7.3
 } odotype;
 
 void reset_odo(odotype *p);
@@ -345,8 +345,8 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                
-                //if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.3, mission.time)) mission.state = ms_end;
 
                 break;
@@ -432,10 +432,10 @@ void update_odo(odotype *p) {
 }
 
 void update_motcon(motiontype *p) {
-    sm_saveArray();         /*ADDED*/
-    read_linesensor();      // added 7.2
-    calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
-	odo.COM=center_of_mass(jarray); // 7.3
+    sm_saveArray();                    /*ADDED*/
+    read_linesensor();                 // added 7.2
+    calibrateLinesensor();             // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
+    odo.COM = center_of_mass(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -503,8 +503,8 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
-        case mot_follow_line:  // 7.3 and 7.5
-            odo.delta_v = (K * ((odo.COM-4)*0.2)) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+        case mot_follow_line:                               // 7.3 and 7.5
+            odo.delta_v = (K * ((odo.COM - 4) * 0.2)) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -634,13 +634,12 @@ void calibrateLinesensor() {
     }
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
         if (jarray[c] < jarray[loc]) {
-            odo.location_line_sensor = c+1;
-            loc=c; 
+            odo.location_line_sensor = c + 1;
+            loc = c;
         }
     }
     // printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
 }
-
 
 int arrayCounter = 0;
 float array[25][10000];
@@ -657,37 +656,29 @@ void sm_saveArray() {
     for (int i = 0; i < 8; i++) {
         array[15 + i][arrayCounter] = jarray[i];
     }
-        array[24][arrayCounter] = odo.location_line_sensor;
-    
+    array[24][arrayCounter] = odo.location_line_sensor;
+    array[25][arrayCounter] = odo.COM;
 
     arrayCounter++;
 }
 
-
-//com = center_of_mass(array_with_intensities);
+// com = center_of_mass(array_with_intensities);
 
 float center_of_mass(double *intensity_array) {
-
     float num = 0;
     float den = 0;
 
-
-    for(int i = 0; i < LINE_SENSOR_DATA_LENGTH ; i++){
-
-        if(!intensity_array[i] == 0){
-            num = num + ((i+1)*intensity_array[i]);
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        if (!intensity_array[i] == 0) {
+            num = num + ((i + 1) * intensity_array[i]);
             den = den + intensity_array[i];
         } else {
-            num = num + ((i+1)*(1-intensity_array[i]));
-            den = den + (1-intensity_array[i]);
+            num = num + ((i + 1) * (1 - intensity_array[i]));
+            den = den + (1 - intensity_array[i]);
         }
-
-        
-
     }
 
-    return num/den;
-
+    return num / den;
 }
 
 void writeToFile() {
@@ -708,10 +699,10 @@ void writeToFile() {
                 array[9][i], array[10][i], array[11][i], array[12][i],
                 array[13][i], array[14][i]);
         fprintf(f3,
-                "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d \n",
+                "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d %.3f \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i], array[23][i],(int)array[24][i]);
+                array[22][i], array[23][i], (int)array[24][i]),array[25][i]);
     }
 
     fclose(f1);
