@@ -344,7 +344,8 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+
+                //if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.3, mission.time)) mission.state = ms_end;
 
                 break;
@@ -501,7 +502,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.theta_ls - odo.theta)) / 2;  // calculate offset
+            odo.delta_v = (K * (odo.location_line_sensor - odo.theta)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -629,13 +630,13 @@ void read_linesensor() {
 
 void calibrateLinesensor() {
     int loc = 0;
-    odo.location_line_sensor = 0;
+    odo.location_line_sensor = 1;
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         jarray[i] = line_array[i] / 255;
     }
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
         if (jarray[c] < jarray[loc]) {
-            odo.location_line_sensor = c;
+            odo.location_line_sensor = c+1;
         }
     }
     // printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
