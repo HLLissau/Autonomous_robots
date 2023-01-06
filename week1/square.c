@@ -62,10 +62,10 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define K 0.04  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
-double line_array[LINE_SENSOR_DATA_LENGTH];        // variable som line sensor data skal lægges ind i 7.1
-double jarray[LINE_SENSOR_DATA_LENGTH]; // normalisered værdi af line sensor.
-typedef struct {              // input signals
-    int left_enc, right_enc;  // encoderticks
+double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
+double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
+typedef struct {                             // input signals
+    int left_enc, right_enc;                 // encoderticks
     // parameters
     double w;       // wheel separation
     double cr, cl;  // meters per encodertick
@@ -75,6 +75,7 @@ typedef struct {              // input signals
     double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
     int len;                                          // Tilført 5.using zoneobst with square
     double delta_v, theta_ref, theta_ls;              // Tilført 7.1
+    int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
 } odotype;
@@ -321,7 +322,7 @@ int main(int argc, char **argv) {
                 break;
 
             case ms_fwd:
-                //if (fwd(dist, 0.3, mission.time)) mission.state = ms_turn;
+                // if (fwd(dist, 0.3, mission.time)) mission.state = ms_turn;
 
                 // 3.3)
                 // if (fwd(2,0.2,mission.time))  mission.state=ms_end;
@@ -341,10 +342,10 @@ int main(int argc, char **argv) {
                 }
                 break;
             case ms_follow_line:
-                //7.3
-                if (mission.time==0) odo.theta_ls=0;
-                if (mission.time%25==24) odo.theta_ls=odo.theta_ls+0.1;
-                if(follow_line(dist,0.3,mission.time)) mission.state=ms_end;
+                // 7.3
+                if (mission.time == 0) odo.theta_ls = 0;
+                if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line(dist, 0.3, mission.time)) mission.state = ms_end;
 
                 break;
 
@@ -429,9 +430,9 @@ void update_odo(odotype *p) {
 }
 
 void update_motcon(motiontype *p) {
-    sm_saveArray(); /*ADDED*/
-    read_linesensor(); // added 7.2
-    calibrateLinesensor(); // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
+    sm_saveArray();         /*ADDED*/
+    read_linesensor();      // added 7.2
+    calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     if (p->cmd != 0) {
         p->finished = 0;
         switch (p->cmd) {
@@ -454,13 +455,12 @@ void update_motcon(motiontype *p) {
                 p->startpos = (p->left_pos + p->right_pos) / 2;
                 p->curcmd = mot_follow_line;
                 break;
-
         }
 
         p->cmd = 0;
     }
 
-    double d= p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
+    double d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     double d_turn;
 
     switch (p->curcmd) {
@@ -499,33 +499,33 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
-        case mot_follow_line:                                    // 7.3
+        case mot_follow_line:  // 7.3
             printf("gogogo! \n");
             odo.delta_v = (K * (odo.theta_ls - odo.theta)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
-                 printf("1gogogo! \n");
+                printf("1gogogo! \n");
                 p->finished = 1;
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
-            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) { //deceleration
-                 printf("2gogogo! \n");
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // deceleration
+                printf("2gogogo! \n");
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 }
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                 }
-            } else {          // acceleration
-             printf("gogogo!\n");
+            } else {  // acceleration
+                printf("gogogo!\n");
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
                     p->motorspeed_l = p->speedcmd - odo.delta_v;
                 }
 
-                if (p->motorspeed_r < p->speedcmd) { //limit acceration
+                if (p->motorspeed_r < p->speedcmd) {  // limit acceration
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
                 } else {
                     p->motorspeed_r = p->speedcmd + odo.delta_v;
@@ -596,19 +596,17 @@ int turn(double angle, double speed, int time) {
     } else
         return mot.finished;
 }
-int follow_line(double dist,double speed,int time){
-    printf("gogogo! %d \n",time);
-    if(time==0){
-        mot.cmd= mot_follow_line;
-        mot.speedcmd=speed;
-        mot.dist=dist;
+int follow_line(double dist, double speed, int time) {
+    printf("gogogo! %d \n", time);
+    if (time == 0) {
+        mot.cmd = mot_follow_line;
+        mot.speedcmd = speed;
+        mot.dist = dist;
         return 0;
     } else {
         return mot.finished;
     }
-
 }
-
 
 void sm_update(smtype *p) {
     if (p->state != p->oldstate) {
@@ -619,40 +617,29 @@ void sm_update(smtype *p) {
     }
 }
 
-void read_linesensor(){
-    for (int count=0;count<LINE_SENSOR_DATA_LENGTH;count++)
-			{
-				line_array[count]=linesensor->data[count];
-                          
-			}
-			
+void read_linesensor() {
+    for (int count = 0; count < LINE_SENSOR_DATA_LENGTH; count++) {
+        line_array[count] = linesensor->data[count];
+    }
 }
-
-
 
 // kan testes med følgende
 // float arraybum[] = {1,128,255,255,200,100,128,55};
 // calibrateLinesensor(arraybum);
 
 void calibrateLinesensor() {
-			int loc=0;
-			odo.location_line_sensor=0;
-    for(int i = 0; i < LINE_SENSOR_DATA_LENGTH ; i++)
-			{
-        jarray[i] = line_array[i]/255;
-	        for(int c=1;c<LINE_SENSOR_DATA_LENGTH;c++)
-					{
-						if(jarray[c]<jarray[loc])
-								{
-									odo.location_line_sensor=c;
-								}
-								
-					}
-
-			}
-		//printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
+    int loc = 0;
+    odo.location_line_sensor = 0;
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        jarray[i] = line_array[i] / 255;
+    }
+    for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
+        if (jarray[c] < jarray[loc]) {
+            odo.location_line_sensor = c;
+        }
+    }
+    // printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
 }
-
 
 int arrayCounter = 0;
 float array[16][10000];
@@ -666,7 +653,7 @@ void sm_saveArray() {
     for (int i = 0; i < 9; i++) {
         array[6 + i][arrayCounter] = laserpar[i];
     }
-     for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         array[16 + i][arrayCounter] = laserpar[i];
     }
 
