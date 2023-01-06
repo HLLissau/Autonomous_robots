@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.004  //
+#define K 0.04  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
@@ -78,7 +78,7 @@ typedef struct {                             // input signals
     int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
-    float com;                                         // 7.3
+    float com;  // 7.3
 } odotype;
 
 void reset_odo(odotype *p);
@@ -86,6 +86,7 @@ void update_odo(odotype *p);
 void writeToFile();
 void sm_saveArray();
 void calibrateLinesensor();
+void minIntensity();
 void read_linesensor();
 
 /********************************************
@@ -345,8 +346,8 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                
-                //if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.1, mission.time)) mission.state = ms_end;
 
                 break;
@@ -435,6 +436,7 @@ void update_motcon(motiontype *p) {
     sm_saveArray();         /*ADDED*/
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
+    minIntensity();         // added 7.3.2
     if (p->cmd != 0) {
         p->finished = 0;
         switch (p->cmd) {
@@ -503,7 +505,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.location_line_sensor-4.5)) / 2;  // calculate offset
+            odo.delta_v = (K * (odo.location_line_sensor - 4.5)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -630,20 +632,20 @@ void read_linesensor() {
 // calibrateLinesensor(arraybum);
 
 void calibrateLinesensor() {
-    int loc = 0;
     odo.location_line_sensor = 1;
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         jarray[i] = line_array[i] / 255;
     }
+}
+void minIntensity() {
+    int min = 0;
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
-        if (jarray[c] < jarray[loc]) {
-            odo.location_line_sensor = c+1;
-            loc=c; 
+        if (jarray[c] < jarray[min]) {
+            odo.location_line_sensor = c + 1;
+            min = c;
         }
     }
-    // printf("params: %f %f %f %f %f %f %f %f %d\n", jarray[0],jarray[1],jarray[2],jarray[3],jarray[4],jarray[5],jarray[6],jarray[7],odo.location_line_sensor);
 }
-
 
 int arrayCounter = 0;
 float array[25][10000];
@@ -660,8 +662,7 @@ void sm_saveArray() {
     for (int i = 0; i < 8; i++) {
         array[15 + i][arrayCounter] = jarray[i];
     }
-        array[24][arrayCounter] = odo.location_line_sensor;
-    
+    array[24][arrayCounter] = odo.location_line_sensor;
 
     arrayCounter++;
 }
@@ -715,7 +716,7 @@ void writeToFile() {
                 "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i], array[23][i],(int)array[24][i]);
+                array[22][i], array[23][i], (int)array[24][i]);
     }
 
     fclose(f1);
