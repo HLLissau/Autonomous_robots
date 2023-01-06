@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
         switch (mission.state) {
             case ms_init:
                 n = 4;
-                dist = 3;
+                dist = 2;
                 angle = -90.0 / 180 * M_PI;
                 mission.state = ms_follow_line;
                 break;
@@ -504,7 +504,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:  // 7.3 and 7.5
-            odo.delta_v = (K * ((odo.COM-4.5)*0.1)) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * ((odo.COM-4.5))) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
