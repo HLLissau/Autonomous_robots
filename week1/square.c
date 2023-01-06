@@ -435,7 +435,8 @@ void update_motcon(motiontype *p) {
     sm_saveArray();         /*ADDED*/
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
-		odo.COM=center_of_mass(jarray); // 7.3
+	odo.COM=center_of_mass(jarray); // 7.3
+
     if (p->cmd != 0) {
         p->finished = 0;
         switch (p->cmd) {
@@ -504,7 +505,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.location_line_sensor-4.5)) / 2;  // calculate offset
+            odo.delta_v = (K * (odo.COM-4.5)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
