@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
         switch (mission.state) {
             case ms_init:
                 n = 4;
-                dist = 4;
+                dist = 1.5;
                 angle = -90.0 / 180 * M_PI;
                 mission.state = ms_follow_line;
                 break;
@@ -348,7 +348,7 @@ int main(int argc, char **argv) {
                 if (mission.time == 0) odo.theta_ls = 0;
 
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line(dist, 0.5, mission.time)) mission.state = ms_end;
+                if (follow_line(dist, 0.4, mission.time)) mission.state = ms_end;
 
                 break;
 
