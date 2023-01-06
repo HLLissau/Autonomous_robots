@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-
+                
                 //if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.3, mission.time)) mission.state = ms_end;
 
@@ -502,7 +502,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:  // 7.3
             printf("gogogo! \n");
-            odo.delta_v = (K * (odo.location_line_sensor - odo.theta)) / 2;  // calculate offset
+            odo.delta_v = (K * (odo.theta_ref - odo.location_line_sensor)) / 2;  // calculate offset
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
