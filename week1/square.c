@@ -520,7 +520,7 @@ void update_motcon(motiontype *p) {
                     p->motorspeed_r = p->speedcmd + odo.delta_v;
                 }
             }
-
+            break;
         case mot_turn:
             d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
 
