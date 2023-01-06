@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.004  //
+#define K 0.008  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
         switch (mission.state) {
             case ms_init:
                 n = 4;
-                dist = 1.5;
+                dist = 2;
                 angle = -90.0 / 180 * M_PI;
                 mission.state = ms_follow_line;
                 break;
