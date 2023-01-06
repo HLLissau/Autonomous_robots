@@ -654,7 +654,7 @@ void sm_saveArray() {
         array[6 + i][arrayCounter] = laserpar[i];
     }
     for (int i = 0; i < 8; i++) {
-        array[15 + i][arrayCounter] = laserpar[i];
+        array[15 + i][arrayCounter] = jarray[i];
     }
         array[24][arrayCounter] = odo.location_line_sensor;
     
