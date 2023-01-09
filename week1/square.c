@@ -491,6 +491,10 @@ void update_motcon(motiontype *p) {
                 p->startpos = (p->left_pos + p->right_pos) / 2;
                 p->curcmd = mot_move;
                 break;
+            case mot_rev:
+                p->startpos = (p->left_pos + p->right_pos) / 2;
+                p->curcmd = mot_move;
+                break;
 
             case mot_turn:
                 if (p->angle > 0)
