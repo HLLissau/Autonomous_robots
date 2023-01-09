@@ -165,7 +165,8 @@ enum { ms_init,
        ms_box_push,
        ms_box_reverse,
        ms_turn,
-       ms_follow_line,
+       ms_box_follow_line_left2,
+       ms_box_follow_line,
        ms_follow_line_right,
        ms_end };
 
@@ -373,10 +374,21 @@ int main(int argc, char **argv) {
                    printf("entering ms_box_turn \n");
                 
                 }
-                if (turn(-3, 0.3, mission.time)) mission.state = ms_end;
+                if (turn(-3, 0.3, mission.time)) mission.state = ms_box_follow_line_left2;
 
                     break;
-            case ms_follow_line:
+            
+            case ms_box_follow_line_left2:
+                // 7.3
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    dist = 1;
+                }
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_box_follow_line;
+
+                break;
+            case ms_box_follow_line:
                 // 7.3
                 if (mission.time == 0) {
                     odo.theta_ls = 0;
