@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
                 // 7.3
                 if (mission.time == 0) {
                     odo.theta_ls = odo.theta_ref;
-                    speed=0.6;
+                    speed=0.1;
                     dist = 1;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
