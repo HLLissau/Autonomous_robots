@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                mot.follow_line_diff=4.555;
+                
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
@@ -351,7 +351,6 @@ int main(int argc, char **argv) {
             case ms_follow_line_left:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                mot.follow_line_diff=4.68;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
@@ -359,7 +358,6 @@ int main(int argc, char **argv) {
             case ms_follow_line_right:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
-                mot.follow_line_diff=4.42;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
