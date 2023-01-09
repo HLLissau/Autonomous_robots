@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
                     dist = 2;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_end;
+                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_box_push;
 
                 break;
             case ms_box_push:
