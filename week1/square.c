@@ -557,6 +557,8 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
+              printf("reverse\n");
+              
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     
             if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
