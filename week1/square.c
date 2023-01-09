@@ -358,7 +358,9 @@ int main(int argc, char **argv) {
                 break;
             case ms_box_reverse:
                 if (mission.time == 0) {
+                    odo.theta_ref= odo.theta;
                     odo.theta_ls = 0;
+                    
                     speed=-0.6;
                     dist = -1;
                     printf("entering ms_box_reverse \n");
