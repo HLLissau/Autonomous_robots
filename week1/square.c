@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
                 // 7.3
                 if (mission.time == 0) {
                     odo.theta_ls = 0;
-                    dist = 2.2;
+                    dist = 3.2;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line_left(dist, speed, mission.time)) mission.state = ms_box_push;
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
                     odo.theta_ref= odo.theta;
                     odo.theta_ls = 0;
                     speed=0.3;
-                    dist = 1;
+                    dist = 0.1;
                     printf("entering ms_box_push \n");
                 }
                 if (fwd(dist,speed,mission.time))mission.state=ms_box_reverse;
@@ -496,7 +496,7 @@ void update_motcon(motiontype *p) {
                 break;
             case mot_rev:
                 p->startpos = (p->left_pos + p->right_pos) / 2;
-                p->curcmd = mot_move;
+                p->curcmd = mot_rev;
                 break;
 
             case mot_turn:
