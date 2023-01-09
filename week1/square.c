@@ -113,6 +113,7 @@ typedef struct {  // input
 
 enum { mot_stop = 1,
        mot_move,
+       mot_rev,
        mot_follow_line,
        mot_turn };
 
@@ -544,6 +545,37 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
+        case mot_rev:
+            // 7.1 we change the motors to stay on course
+            odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
+
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+            } else {
+                // 3.4.)
+                if (p->motorspeed_l < p->speedcmd) {
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                }
+
+                if (p->motorspeed_r < p->speedcmd) {
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                }
+            }
+            break;
         case mot_follow_line:                                                // 7.3 and 7.5
             odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
@@ -627,7 +659,15 @@ int fwd(double dist, double speed, int time) {
     } else
         return mot.finished;
 }
-
+int rev(double dist, double speed, int time) {
+    if (time == 0) {
+        mot.cmd = mot_rev;
+        mot.speedcmd = speed;
+        mot.dist = dist;
+        return 0;
+    } else
+        return mot.finished;
+}
 int turn(double angle, double speed, int time) {
     if (time == 0) {
         mot.cmd = mot_turn;
