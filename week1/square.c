@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
                 // 7.3
                 if (mission.time == 0) {
                     odo.theta_ls = 0;
-                    dist = 2;
+                    dist = 2.2;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line_left(dist, speed, mission.time)) mission.state = ms_box_push;
@@ -352,6 +352,7 @@ int main(int argc, char **argv) {
                     odo.theta_ls = 0;
                     speed=0.3;
                     dist = 1;
+                    printf("entering ms_box_push");
                 }
                 if (fwd(dist,speed,mission.time))mission.state=ms_box_reverse;
                 break;
@@ -359,7 +360,8 @@ int main(int argc, char **argv) {
                 if (mission.time == 0) {
                     odo.theta_ls = 0;
                     speed=-0.6;
-                    dist = 1;
+                    dist = -1;
+                    printf("entering ms_box_reverse");
                 }
                 if (fwd(dist,speed,mission.time)) mission.state=ms_end;
                 
