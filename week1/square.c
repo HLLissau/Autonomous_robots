@@ -61,6 +61,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define K 0.16  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
+double speed;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct {                             // input signals
@@ -182,7 +183,9 @@ int main(int argc, char **argv) {
             case 'c':
                 calibration = 1;
                 break;
-
+            case 'v':
+                speed=optarg;
+                break;
             case 's':
                 if (optarg) {
                     int port;
@@ -346,21 +349,21 @@ int main(int argc, char **argv) {
                 if (mission.time == 0) odo.theta_ls = 0;
                 
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
             case ms_follow_line_left:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_left(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
             case ms_follow_line_right:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_right(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line_right(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
 
