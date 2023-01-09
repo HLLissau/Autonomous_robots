@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
                 break;
             case ms_box_push:
                if (mission.time == 0) {
-                    angle = -90.0 / 180 * M_PI;
+                    odo.theta_ref= odo.theta;
                     odo.theta_ls = 0;
                     speed=0.3;
                     dist = 1;
@@ -356,7 +356,6 @@ int main(int argc, char **argv) {
                 break;
             case ms_box_reverse:
                 if (mission.time == 0) {
-                    angle = -90.0 / 180 * M_PI;
                     odo.theta_ls = 0;
                     speed=-0.6;
                     dist = 1;
