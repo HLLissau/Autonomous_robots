@@ -621,7 +621,7 @@ int follow_line(double dist, double speed, int time) {
         return mot.finished;
     }
 }
-int follow_line:left(double dist, double speed, int time) {
+int follow_line_left(double dist, double speed, int time) {
     if (time == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
