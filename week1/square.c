@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
                     speed=0.3;
                     dist = 1;
                 }
-                if (follow_line(dist,speed,mission.time))mission.state=ms_box_reverse;
+                if (fwd(dist,speed,mission.time))mission.state=ms_box_reverse;
                 break;
             case ms_box_reverse:
                 if (mission.time == 0) {
