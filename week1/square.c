@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
                 n = 4;
                 dist = 2;
                 angle = -90.0 / 180 * M_PI;
-                mission.state = ms_follow_line_left;
+                mission.state = ms_follow_line_right;
                 break;
 
             case ms_fwd:
@@ -517,7 +517,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                               // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.15) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.1) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             printf("delta_v: %f. Followline: %f \n", odo.delta_v, mot.follow_line_diff);
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
