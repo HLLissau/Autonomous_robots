@@ -170,7 +170,7 @@ enum { ms_init,
        ms_end };
 
 int main(int argc, char **argv) {
-    int n = 0, arg, time = 0, opt, calibration;
+    int arg, time = 0, opt, calibration;
     double dist = 0, angle = 0;
     // install sighandlers
     if (1) {
