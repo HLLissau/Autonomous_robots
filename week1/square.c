@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
             case ms_box_follow_line_left2:
                 // 7.3
                 if (mission.time == 0) {
-                    odo.theta_ls = 0;
+                    odo.theta_ls = odo.theta_ref;
                     dist = 1;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
