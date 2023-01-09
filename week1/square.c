@@ -170,7 +170,7 @@ enum { ms_init,
        ms_end };
 
 int main(int argc, char **argv) {
-    int arg, time = 0, opt; // calibration;
+    int arg, time = 0, opt, calibration;
     double dist = 0, angle = 0;
     // install sighandlers
     if (1) {
@@ -328,7 +328,6 @@ int main(int argc, char **argv) {
         sm_update(&mission);
         switch (mission.state) {
             case ms_init:
-                angle = -0.0 / 180 * M_PI;
                 mission.state = ms_fwd;
                 break;
 
@@ -370,11 +369,11 @@ int main(int argc, char **argv) {
                 break;
             case ms_turn:
                 if (mission.time == 0){
-                  odo.theta_ref = (180 + odo.theta);
+                  odo.theta_ref = (3 + odo.theta);
                    printf("entering ms_box_turn \n");
                 
                 }
-                if (turn(180, 0.3, mission.time)) mission.state = ms_end;
+                if (turn(3, 0.3, mission.time)) mission.state = ms_end;
 
                     break;
             case ms_follow_line:
