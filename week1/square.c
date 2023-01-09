@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
                 break;
             
             case ms_fwd:
-                if (fwd(0.5,0.6,mission.time))  mission.state=ms_follow_line_left;
+                if (fwd(0.3,0.6,mission.time))  mission.state=ms_follow_line_left;
 
                 break;
 
