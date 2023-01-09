@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
                 calibration = 1;
                 break;
             case 'v':
-                speed=atoi(optarg)*0.1;
+                speed=atoi(optarg)*0.001;
                 break;
             case 's':
                 if (optarg) {
