@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
                     odo.theta_ls = 0;
                     speed=0.3;
                     dist = 1;
-                    printf("entering ms_box_push");
+                    printf("entering ms_box_push \n");
                 }
                 if (fwd(dist,speed,mission.time))mission.state=ms_box_reverse;
                 break;
@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
                     odo.theta_ls = 0;
                     speed=-0.6;
                     dist = -1;
-                    printf("entering ms_box_reverse");
+                    printf("entering ms_box_reverse \n");
                 }
                 if (fwd(dist,speed,mission.time)) mission.state=ms_end;
                 
@@ -550,8 +550,8 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
-            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            //p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            //p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
             // if (p->motorspeed_r<0) p->motorspeed_r=0;
             //  3.5)
