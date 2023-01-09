@@ -321,16 +321,11 @@ int main(int argc, char **argv) {
                 n = 4;
                 dist = 2;
                 angle = -90.0 / 180 * M_PI;
-                mission.state = ms_follow_line_left;
+                mission.state = ms_fwd;
                 break;
             
             case ms_fwd:
-                // if (fwd(dist, 0.3, mission.time)) mission.state = ms_turn;
-
-                // 3.3)
-                // if (fwd(2,0.2,mission.time))  mission.state=ms_end;
-                // if (fwd(2,0.4,mission.time))  mission.state=ms_end;
-                // if (fwd(2,0.6,mission.time))  mission.state=ms_end;
+                if (fwd(0.5,0.6,mission.time))  mission.state=ms_follow_line_left;
 
                 break;
 
