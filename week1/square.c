@@ -61,7 +61,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define K 0.16  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
-double speed;
+double speed=0.2;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct {                             // input signals
