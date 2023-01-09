@@ -562,7 +562,7 @@ void update_motcon(motiontype *p) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
-            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+            } else if (abs(p->motorspeed_l) > sqrt(2 * ACCELLERATION * abs(d))) {  // same speed for each motor due to fwd
                 printf("deceleration\n");
                 p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
