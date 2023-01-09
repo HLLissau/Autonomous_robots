@@ -349,7 +349,7 @@ int main(int argc, char **argv) {
                if (mission.time == 0) {
                     odo.theta_ls = 0;
                     speed=0.3;
-                    dist = 2;
+                    dist = 1;
                 }
                 if (follow_line(dist,speed,mission.time))mission.state=ms_box_reverse;
                 break;
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
                     speed=-0.6;
                     dist = 1;
                 }
-                if (follow_line(dist,speed,mission.time)) mission.state=ms_end;
+                if (fwd(dist,speed,mission.time)) mission.state=ms_end;
                 
             case ms_turn:
                 if (mission.time == 0) odo.theta_ref = (angle + odo.theta);
