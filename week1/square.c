@@ -367,7 +367,7 @@ int main(int argc, char **argv) {
                     printf("entering ms_box_reverse \n");
                 }
                 if (rev(dist,speed,mission.time)) mission.state=ms_end;
-                
+                break;
             case ms_turn:
                 if (mission.time == 0) odo.theta_ref = (angle + odo.theta);
                 if (turn(angle, 0.3, mission.time)) {
@@ -557,7 +557,7 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-              printf("reverse\n");
+              printf("reverse \n");
               
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     
