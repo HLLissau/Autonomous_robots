@@ -624,7 +624,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.57;
+        mot.follow_line_diff=4.50;
         return 0;
     } else {
         return mot.finished;
@@ -635,7 +635,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.54;
+        mot.follow_line_diff=4.6;
         return 0;
     } else {
         return mot.finished;
