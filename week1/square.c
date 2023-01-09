@@ -61,6 +61,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define K 0.16  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
+double speed=0.2;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct {                             // input signals
@@ -182,7 +183,9 @@ int main(int argc, char **argv) {
             case 'c':
                 calibration = 1;
                 break;
-
+            case 'v':
+                speed=atoi(optarg)*0.001;
+                break;
             case 's':
                 if (optarg) {
                     int port;
@@ -318,7 +321,7 @@ int main(int argc, char **argv) {
                 n = 4;
                 dist = 2;
                 angle = -90.0 / 180 * M_PI;
-                mission.state = ms_follow_line_left;
+                mission.state = ms_follow_line_right;
                 break;
 
             case ms_fwd:
@@ -346,21 +349,21 @@ int main(int argc, char **argv) {
                 if (mission.time == 0) odo.theta_ls = 0;
                 
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
             case ms_follow_line_left:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_left(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
             case ms_follow_line_right:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_right(dist, 0.6, mission.time)) mission.state = ms_end;
+                if (follow_line_right(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
 
@@ -517,7 +520,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                               // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.15) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             printf("delta_v: %f. Followline: %f \n", odo.delta_v, mot.follow_line_diff);
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
