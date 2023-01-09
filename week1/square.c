@@ -120,6 +120,7 @@ enum { mot_stop = 1,
 void update_motcon(motiontype *p);
 
 int fwd(double dist, double speed, int time);
+int rev(double dist, double speed, int time);
 int turn(double angle, double speed, int time);
 int follow_line(double dist, double speed, int time);
 int follow_line_left(double dist, double speed, int time);
