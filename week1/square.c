@@ -557,11 +557,14 @@ void update_motcon(motiontype *p) {
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
             } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+                printf/"deceleration\n");
                 p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
             } else {
                 // 3.4.)
+
                 if (p->motorspeed_l > p->speedcmd) {
+                    printf/"acceleration \n");
                     p->motorspeed_l = p->motorspeed_l -TICK_ACCELLERATION;
                 } else {
                     p->motorspeed_l = p->speedcmd ;
@@ -570,7 +573,7 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_r > p->speedcmd) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_r = p->speedcmd ;
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
                 }
             }
             break;
