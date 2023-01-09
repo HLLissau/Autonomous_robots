@@ -106,6 +106,8 @@ typedef struct {  // input
     int finished;
     // internal variables
     double startpos;
+    // follow line offset to follow left or right
+    double follow_line_diff;
 } motiontype;
 
 enum { mot_stop = 1,
@@ -153,11 +155,7 @@ odotype odo;
 smtype mission;
 motiontype mot;
 
-enum { ms_init,
-       ms_fwd,
-       ms_turn,
-       ms_follow_line,
-       ms_end };
+enum { ms_init, ms_fwd, ms_turn, ms_follow_line, ms_follow_line_left, ms_follow_line_right, ms_end };
 
 int main(int argc, char **argv) {
     int n = 0, arg, time = 0, opt, calibration;
@@ -345,7 +343,23 @@ int main(int argc, char **argv) {
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
+                mot.follow_line_diff=4.555;
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
+                break;
+            case ms_follow_line_left:
+                // 7.3
+                if (mission.time == 0) odo.theta_ls = 0;
+                mot.follow_line_diff=4.68;
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
+
+                break;
+            case ms_follow_line_right:
+                // 7.3
+                if (mission.time == 0) odo.theta_ls = 0;
+                mot.follow_line_diff=4.42;
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, 0.6, mission.time)) mission.state = ms_end;
 
@@ -504,7 +518,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                               // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - 4.555)*0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -601,12 +615,33 @@ int follow_line(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
+        mot.follow_line_diff=4.555;
         return 0;
     } else {
         return mot.finished;
     }
 }
-
+int follow_line:left(double dist, double speed, int time) {
+    if (time == 0) {
+        mot.cmd = mot_follow_line;
+        mot.speedcmd = speed;
+        mot.dist = dist;
+        mot.follow_line_diff=4.42;
+        return 0;
+    } else {
+        return mot.finished;
+    }
+}
+int follow_line_right(double dist, double speed, int time) {
+    if (time == 0) {
+        mot.cmd = mot_follow_line;
+        mot.speedcmd = speed;
+        mot.dist = dist;
+        return 0;
+    } else {
+        return mot.finished;
+    }
+}
 void sm_update(smtype *p) {
     if (p->state != p->oldstate) {
         p->time = 0;
