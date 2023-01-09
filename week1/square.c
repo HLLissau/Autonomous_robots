@@ -120,7 +120,8 @@ void update_motcon(motiontype *p);
 int fwd(double dist, double speed, int time);
 int turn(double angle, double speed, int time);
 int follow_line(double dist, double speed, int time);
-
+int follow_line_left(double dist, double speed, int time);
+int follow_line_right(double dist, double speed, int time);
 void segfaulthandler(int sig) {
     //    perror(NULL);
     printf("Seg-error\n");
@@ -625,7 +626,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=5;
+        mot.follow_line_diff=6;
         return 0;
     } else {
         return mot.finished;
@@ -636,7 +637,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4;
+        mot.follow_line_diff=5;
         return 0;
     } else {
         return mot.finished;
