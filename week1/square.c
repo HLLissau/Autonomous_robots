@@ -366,20 +366,15 @@ int main(int argc, char **argv) {
                     dist = -2;
                     printf("entering ms_box_reverse \n");
                 }
-                if (rev(dist,speed,mission.time)) mission.state=ms_end;
+                if (rev(dist,speed,mission.time)) mission.state=ms_turn;
                 break;
             case ms_turn:
                 if (mission.time == 0){
                   odo.theta_ref = (180 + odo.theta);
                 }
                 if (turn(angle, 0.3, mission.time)) {
-                    n = n - 1;
-                    if (n == 0)
                         mission.state = ms_end;
-                    else
-                        mission.state = ms_fwd;
-                }
-                break;
+                    break;
             case ms_follow_line:
                 // 7.3
                 if (mission.time == 0) {
