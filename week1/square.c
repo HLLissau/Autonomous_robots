@@ -61,7 +61,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define K 0.16  //
 #define LINE_SENSOR_DATA_LENGTH 8
 
-double speed=0.2;
+double speed = 0.2;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct {                             // input signals
@@ -157,7 +157,15 @@ odotype odo;
 smtype mission;
 motiontype mot;
 
-enum { ms_init, ms_fwd, ms_turn, ms_follow_line, ms_follow_line_left, ms_follow_line_right, ms_end };
+enum { ms_init,
+       ms_fwd,
+       ms_box_follow_line_left,
+       ms_box_push,
+       ms_box_reverse,
+       ms_turn,
+       ms_follow_line,
+       ms_follow_line_right,
+       ms_end };
 
 int main(int argc, char **argv) {
     int n = 0, arg, time = 0, opt, calibration;
@@ -184,7 +192,7 @@ int main(int argc, char **argv) {
                 calibration = 1;
                 break;
             case 'v':
-                speed=atoi(optarg)*0.001;
+                speed = atoi(optarg) * 0.001;
                 break;
             case 's':
                 if (optarg) {
@@ -318,17 +326,41 @@ int main(int argc, char **argv) {
         sm_update(&mission);
         switch (mission.state) {
             case ms_init:
-                n = 4;
-                dist = 2;
                 angle = -90.0 / 180 * M_PI;
                 mission.state = ms_fwd;
                 break;
-            
+
             case ms_fwd:
-                if (fwd(0.3,0.6,mission.time))  mission.state=ms_follow_line_left;
+                if (fwd(0.3, 0.6, mission.time)) mission.state = ms_box_follow_line_left;
 
                 break;
 
+            case ms_box_follow_line_left:
+                // 7.3
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    dist = 2;
+                }
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_end;
+
+                break;
+            case ms_box_push:
+               if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    speed=0.6;
+                    dist = 2;
+                }
+                if (follow_line(dist,speed,mission.time))mission.state=ms_box_reverse;
+                break;
+            case ms_box_reverse:
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    speed=-0.6;
+                    dist = 1;
+                }
+                if (follow_line(dist,speed,mission.time)) mission.state=ms_end;
+                
             case ms_turn:
                 if (mission.time == 0) odo.theta_ref = (angle + odo.theta);
                 if (turn(angle, 0.3, mission.time)) {
@@ -341,19 +373,16 @@ int main(int argc, char **argv) {
                 break;
             case ms_follow_line:
                 // 7.3
-                if (mission.time == 0) odo.theta_ls = 0;
-                
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    dist = 2;
+                }
+
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
                 if (follow_line(dist, speed, mission.time)) mission.state = ms_end;
 
                 break;
-            case ms_follow_line_left:
-                // 7.3
-                if (mission.time == 0) odo.theta_ls = 0;
-                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-                if (follow_line_left(dist, speed, mission.time)) mission.state = ms_end;
 
-                break;
             case ms_follow_line_right:
                 // 7.3
                 if (mission.time == 0) odo.theta_ls = 0;
@@ -514,8 +543,8 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
-        case mot_follow_line:                               // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff)*0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+        case mot_follow_line:                                                // 7.3 and 7.5
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             printf("delta_v: %f. Followline: %f \n", odo.delta_v, mot.follow_line_diff);
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
@@ -525,10 +554,10 @@ void update_motcon(motiontype *p) {
                 p->motorspeed_r = 0;
             } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // deceleration
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION - odo.delta_v*0.1;
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION - odo.delta_v * 0.1;
                 }
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION + odo.delta_v*0.1;
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION + odo.delta_v * 0.1;
                 }
             } else {  // acceleration
                 if (p->motorspeed_l < p->speedcmd) {
@@ -613,7 +642,7 @@ int follow_line(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.555;
+        mot.follow_line_diff = 4.555;
         return 0;
     } else {
         return mot.finished;
@@ -624,7 +653,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.42;
+        mot.follow_line_diff = 4.42;
         return 0;
     } else {
         return mot.finished;
@@ -635,7 +664,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.68;
+        mot.follow_line_diff = 4.68;
         return 0;
     } else {
         return mot.finished;
@@ -664,7 +693,7 @@ void calibrateLinesensor() {
     int loc = 0;
     odo.location_line_sensor = 1;
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
-        jarray[i] = 1-(line_array[i] / 255); //setting higher mass for black
+        jarray[i] = 1 - (line_array[i] / 255);  // setting higher mass for black
     }
     for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
         if (jarray[c] < jarray[loc]) {
@@ -736,7 +765,7 @@ void writeToFile() {
                 "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f  %.5d %.3f \n",
                 (int)array[0][i], array[15][i], array[16][i], array[17][i],
                 array[18][i], array[19][i], array[20][i], array[21][i],
-                array[22][i],  (int)array[23][i],array[24][i]);
+                array[22][i], (int)array[23][i], array[24][i]);
     }
 
     fclose(f1);
