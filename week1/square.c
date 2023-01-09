@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
                 n = 4;
                 dist = 2;
                 angle = -90.0 / 180 * M_PI;
-                mission.state = ms_follow_line;
+                mission.state = ms_follow_line_left;
                 break;
 
             case ms_fwd:
@@ -626,7 +626,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.45;
+        mot.follow_line_diff=4.6;
         return 0;
     } else {
         return mot.finished;
@@ -637,7 +637,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff=4.65;
+        mot.follow_line_diff=4.5;
         return 0;
     } else {
         return mot.finished;
