@@ -767,7 +767,7 @@ float center_of_mass(double *intensity_array) {
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (!intensity_array[i] == 0) {
-            num = num + ((i -3.5 ) * intensity_array[i]*0.0185);
+            num = num + ((i -3.5 ) * intensity_array[i]*0.0185); 
             den = den + (intensity_array[i]);
         } else {  // if line is black, we exchange i with i-1
             num = num + ((i -3.5 ) * (1 - intensity_array[i])*0.0185);
@@ -776,7 +776,8 @@ float center_of_mass(double *intensity_array) {
     }
     float res= num / den;
     printf("COM: %f \n", res);
-    float error=0.0128;
+    float error=0.001035;
+    res=res-error;
     return (res);
 }
 
