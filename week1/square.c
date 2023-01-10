@@ -624,13 +624,13 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                    p->motorspeed_l = p->speedcmd ;
                 }
 
                 if (p->motorspeed_r < p->speedcmd) {  // limit acceration
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                    p->motorspeed_r = p->speedcmd ;
                 }
             }
             break;
