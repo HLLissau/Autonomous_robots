@@ -602,12 +602,12 @@ void update_motcon(motiontype *p) {
             // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if (odo.delta_v < 0) {
-                p->motorspeed_r = p->motorspeed_r + odo.delta_v; //we accelerate one wheel
-                p->motorspeed_l = p->motorspeed_l - odo.delta_v / 2; //decelerate the other with half the speed
+                p->motorspeed_r = p->motorspeed_r + odo.delta_v/2; //we accelerate one wheel
+                p->motorspeed_l = p->motorspeed_l - odo.delta_v; //decelerate the other with half the speed
 
             } else {
-                p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-                p->motorspeed_r = p->motorspeed_r + odo.delta_v / 2;
+                p->motorspeed_l = p->motorspeed_l - odo.delta_v/2;
+                p->motorspeed_r = p->motorspeed_r + odo.delta_v ;
             }
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
                 p->finished = 1;
@@ -802,10 +802,10 @@ float center_of_mass(double *intensity_array) {
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (!intensity_array[i] == 0) {
-            num = num + ((i + 1) * intensity_array[i]);
+            num = num + ((i -3 ) * intensity_array[i]);
             den = den + (intensity_array[i]);
         } else {  // if line is black, we exchange i with i-1
-            num = num + ((i + 1) * (1 - intensity_array[i]));
+            num = num + ((i -3) * (1 - intensity_array[i]));
             den = den + (intensity_array[i]);
         }
     }
