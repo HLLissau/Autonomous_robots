@@ -598,7 +598,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                                                // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.1) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.4) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
