@@ -598,7 +598,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:                                                // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.2) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.3) / 2;  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
@@ -787,7 +787,7 @@ void sm_saveArray() {
 }
 
 // com = center_of_mass(array_with_intensities);
-
+// calculate where the line is in comparison to the line sensors 1-8, where 4.555 is the middle value
 float center_of_mass(double *intensity_array) {
     float num = 0;
     float den = 0;
@@ -796,7 +796,7 @@ float center_of_mass(double *intensity_array) {
         if (!intensity_array[i] == 0) {
             num = num + ((i + 1) * intensity_array[i]);
             den = den + (intensity_array[i]);
-        } else {
+        } else { // if line is black, we exchange i with i-1
             num = num + ((i + 1) * (1 - intensity_array[i]));
             den = den + (intensity_array[i]);
         }
