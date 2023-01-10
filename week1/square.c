@@ -348,41 +348,40 @@ int main(int argc, char **argv) {
 
                 break;
             case ms_box_push:
-               if (mission.time == 0) {
-                    odo.theta_ref= odo.theta;
+                if (mission.time == 0) {
+                    odo.theta_ref = odo.theta;
                     odo.theta_ls = 0;
-                    speed=0.3;
+                    speed = 0.3;
                     dist = 0.1;
                     printf("entering ms_box_push \n");
                 }
-                if (fwd(dist,speed,mission.time))mission.state=ms_box_reverse;
+                if (fwd(dist, speed, mission.time)) mission.state = ms_box_reverse;
                 break;
             case ms_box_reverse:
                 if (mission.time == 0) {
-                    odo.theta_ref= odo.theta;
+                    odo.theta_ref = odo.theta;
                     odo.theta_ls = 0;
-                    
-                    speed=-0.6;
+
+                    speed = -0.6;
                     dist = -1.5;
                     printf("entering ms_box_reverse \n");
                 }
-                if (rev(dist,speed,mission.time)) mission.state=ms_turn;
+                if (rev(dist, speed, mission.time)) mission.state = ms_turn;
                 break;
             case ms_turn:
-                if (mission.time == 0){
-                  odo.theta_ref = (-3 + odo.theta);
-                   printf("entering ms_box_turn \n");
-                
+                if (mission.time == 0) {
+                    odo.theta_ref = (-3 + odo.theta);
+                    printf("entering ms_box_turn \n");
                 }
                 if (turn(-3, 0.3, mission.time)) mission.state = ms_box_follow_line_left2;
 
-                    break;
-            
+                break;
+
             case ms_box_follow_line_left2:
                 // 7.3
                 if (mission.time == 0) {
                     odo.theta_ls = odo.theta_ref;
-                    speed=0.1;
+                    speed = 0.1;
                     dist = 1;
                 }
                 // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -568,10 +567,10 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-              printf("reverse \n");
-              
+            printf("reverse \n");
+
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
-    
+
             if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
@@ -585,9 +584,9 @@ void update_motcon(motiontype *p) {
 
                 if (p->motorspeed_l > p->speedcmd) {
                     printf("acceleration \n");
-                    p->motorspeed_l = p->motorspeed_l -TICK_ACCELLERATION;
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_l = p->speedcmd ;
+                    p->motorspeed_l = p->speedcmd;
                 }
 
                 if (p->motorspeed_r > p->speedcmd) {
@@ -597,17 +596,18 @@ void update_motcon(motiontype *p) {
                 }
             }
             break;
-        case mot_follow_line:    
+        case mot_follow_line:
             // 7.3 and 7.5
             odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.15);  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
-            //p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            //p->motorspeed_r = p->motorspeed_r + odo.delta_v;
-            if (odo.delta_v < 0){
-                p->motorspeed_r = p->motorspeed_r + odo.delta_v;
-            
-            } else{
+            // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            if (odo.delta_v < 0) {
+                p->motorspeed_r = p->motorspeed_r + odo.delta_v; //we accelerate one wheel
+                p->motorspeed_l = p->motorspeed_l - odo.delta_v / 2; //decelerate the other with half the speed
+
+            } else {
                 p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            
+                p->motorspeed_r = p->motorspeed_r + odo.delta_v / 2;
             }
             if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
                 p->finished = 1;
@@ -615,7 +615,7 @@ void update_motcon(motiontype *p) {
                 p->motorspeed_r = 0;
             } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // deceleration
                 if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION ;
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 }
                 if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
                     p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
@@ -624,13 +624,13 @@ void update_motcon(motiontype *p) {
                 if (p->motorspeed_l < p->speedcmd) {
                     p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_l = p->speedcmd ;
+                    p->motorspeed_l = p->speedcmd;
                 }
 
                 if (p->motorspeed_r < p->speedcmd) {  // limit acceration
                     p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
                 } else {
-                    p->motorspeed_r = p->speedcmd ;
+                    p->motorspeed_r = p->speedcmd;
                 }
             }
             break;
@@ -804,7 +804,7 @@ float center_of_mass(double *intensity_array) {
         if (!intensity_array[i] == 0) {
             num = num + ((i + 1) * intensity_array[i]);
             den = den + (intensity_array[i]);
-        } else { // if line is black, we exchange i with i-1
+        } else {  // if line is black, we exchange i with i-1
             num = num + ((i + 1) * (1 - intensity_array[i]));
             den = den + (intensity_array[i]);
         }
