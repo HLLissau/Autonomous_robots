@@ -598,7 +598,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:
-            odo.delta_v = (K * (atan(0.25/odo.COM))/2)*0.1;
+            odo.delta_v = (K * (atan(0.25/(odo.COM+mot.follow_line_diff)))/2)*0.1;
             printf("delta_v: %f \n",odo.delta_v);
             p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             p->motorspeed_r = p->motorspeed_r + odo.delta_v;
