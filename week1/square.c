@@ -598,7 +598,7 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:
             // 7.3 and 7.5
-            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.1);  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
+            odo.delta_v = (K * (odo.COM - mot.follow_line_diff) * 0.2);  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
             // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
             // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if (odo.delta_v < 0) {
@@ -722,7 +722,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.27;
+        mot.follow_line_diff = 4.4;
         return 0;
     } else {
         return mot.finished;
@@ -733,7 +733,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.83;
+        mot.follow_line_diff = 4.6;
         return 0;
     } else {
         return mot.finished;
