@@ -714,7 +714,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.42;
+        mot.follow_line_diff = 4.32;
         return 0;
     } else {
         return mot.finished;
@@ -725,7 +725,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.68;
+        mot.follow_line_diff = 4.78;
         return 0;
     } else {
         return mot.finished;
@@ -795,10 +795,10 @@ float center_of_mass(double *intensity_array) {
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (!intensity_array[i] == 0) {
             num = num + ((i + 1) * intensity_array[i]);
-            den = den + intensity_array[i];
+            den = den + (intensity_array[i]);
         } else {
             num = num + ((i + 1) * (1 - intensity_array[i]));
-            den = den + (1 - intensity_array[i]);
+            den = den + (intensity_array[i]);
         }
     }
 
