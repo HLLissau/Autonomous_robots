@@ -60,6 +60,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 0.16  //
 #define LINE_SENSOR_DATA_LENGTH 8
+#define LINESENSORDIST 0.0185 
 
 double speed = 0.2;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
@@ -597,6 +598,35 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:
+            odo.delta_v = (K * (atan(0.25/odo.COM))/2);
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
+
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+            } else {
+                // 3.4.)
+                if (p->motorspeed_l < p->speedcmd) {
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                }
+
+                if (p->motorspeed_r < p->speedcmd) {
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                }
+            }
+            break;
             
             break;
         case mot_turn:
@@ -676,7 +706,6 @@ int follow_line(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.555;
         return 0;
     } else {
         return mot.finished;
@@ -687,7 +716,7 @@ int follow_line_left(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.4;
+        mot.follow_line_diff = LINESENSORDIST;
         return 0;
     } else {
         return mot.finished;
@@ -698,7 +727,7 @@ int follow_line_right(double dist, double speed, int time) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = 4.6;
+        mot.follow_line_diff = -LINESENSORDIST;
         return 0;
     } else {
         return mot.finished;
@@ -767,17 +796,18 @@ float center_of_mass(double *intensity_array) {
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (!intensity_array[i] == 0) {
-            num = num + ((i -3.5 ) * intensity_array[i]*0.0185); 
+            num = num + ((i -3.5 ) * intensity_array[i]*LINESENSORDIST); 
             den = den + (intensity_array[i]);
         } else {  // if line is black, we exchange i with i-1
-            num = num + ((i -3.5 ) * (1 - intensity_array[i])*0.0185);
+            num = num + ((i -3.5 ) * (1 - intensity_array[i])*LINESENSORDIST);
             den = den + (intensity_array[i]);
         }
     }
     float res= num / den;
-    printf("COM: %f \n", res);
+
     float error=0.001035;
     res=res-error;
+    //printf("COM: %f \n", res);
     return (res);
 }
 
