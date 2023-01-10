@@ -715,7 +715,7 @@ int follow_line(double dist, double speed, int time) {
 }
 int follow_line_left(double dist, double speed, int time) {
     if (time == 0) {
-        mot.cmd = mot_follow_line_left;
+        mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
         mot.follow_line_diff = LINESENSORDIST;
@@ -726,7 +726,7 @@ int follow_line_left(double dist, double speed, int time) {
 }
 int follow_line_right(double dist, double speed, int time) {
     if (time == 0) {
-        mot.cmd = mot_follow_line_right;
+        mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
         mot.follow_line_diff = -LINESENSORDIST;
