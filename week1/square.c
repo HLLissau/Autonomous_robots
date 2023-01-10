@@ -597,43 +597,7 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:
-            // 7.3 and 7.5
             
-            odo.delta_v = (K * tan(((odo.COM - mot.follow_line_diff)*2)/24) );  // calculate offset (0.1 is an estimate of the difference between the COM and angle)
-            // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
-            if (odo.delta_v < 0) {
-                p->motorspeed_r = p->motorspeed_r + odo.delta_v/2; //we accelerate one wheel
-                p->motorspeed_l = p->motorspeed_l - odo.delta_v; //decelerate the other with half the speed
-
-            } else {
-                p->motorspeed_l = p->motorspeed_l - odo.delta_v/2;
-                p->motorspeed_r = p->motorspeed_r + odo.delta_v ;
-            }
-            if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
-                p->finished = 1;
-                p->motorspeed_l = 0;
-                p->motorspeed_r = 0;
-            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // deceleration
-                if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-                }
-                if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {
-                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-                }
-            } else {  // acceleration
-                if (p->motorspeed_l < p->speedcmd) {
-                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-                } else {
-                    p->motorspeed_l = p->speedcmd;
-                }
-
-                if (p->motorspeed_r < p->speedcmd) {  // limit acceration
-                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-                } else {
-                    p->motorspeed_r = p->speedcmd;
-                }
-            }
             break;
         case mot_turn:
             d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
@@ -803,15 +767,16 @@ float center_of_mass(double *intensity_array) {
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (!intensity_array[i] == 0) {
-            num = num + ((i + 1 ) * intensity_array[i]);
+            num = num + ((i -3 ) * intensity_array[i]*0.0185);
             den = den + (intensity_array[i]);
         } else {  // if line is black, we exchange i with i-1
-            num = num + ((i +1 ) * (1 - intensity_array[i]));
+            num = num + ((i -3 ) * (1 - intensity_array[i])*0.0185);
             den = den + (intensity_array[i]);
         }
     }
-
-    return (num / den);
+    float res= num / den;
+    printf("COM: %f", res);
+    return (res);
 }
 
 void writeToFile() {
