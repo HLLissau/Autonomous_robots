@@ -63,8 +63,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab)
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.18
-#define K2 3 //
+#define K 0.16 //
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -178,7 +177,7 @@ motiontype mot;
 enum
 {
     ms_init,
-    ms_box_fwd,
+    ms_fwd,
     ms_box_follow_line_left,
     ms_box_push,
     ms_box_reverse,
@@ -371,10 +370,10 @@ int main(int argc, char **argv)
         switch (mission.state)
         {
         case ms_init:
-            mission.state = ms_box_fwd;
+            mission.state = ms_box_follow_line_left;
             break;
 
-        case ms_box_fwd:
+        case ms_fwd:
             if (fwd(0.3, 0.6, mission.time))
                 mission.state = ms_box_follow_line_left;
 
@@ -685,15 +684,14 @@ void update_motcon(motiontype *p)
     case mot_follow_line:;
         double ls = odo.COM + mot.follow_line_diff;
         odo.theta_ls = atan(ls / 0.25);
-        odo.delta_v = (K2 * odo.theta_ls);
+        odo.delta_v = (K * odo.theta_ls) / 2;
         printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
         if (odo.delta_v<0){
-        p->motorspeed_l = p->motorspeed_l;
-        p->motorspeed_r=p->motorspeed_l- odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
         } else {
-        p->motorspeed_r = p->motorspeed_r;
-        p->motorspeed_l =p->motorspeed_r+ odo.delta_v;
+        p->motorspeed_l = p->motorspeed_l - odo.delta_v;
         }
+
         // if (p->motorspeed_l<0) p->motorspeed_l=0;
         // if (p->motorspeed_r<0) p->motorspeed_r=0;
         //  3.5)
@@ -718,7 +716,7 @@ void update_motcon(motiontype *p)
             }
             else
             {
-                p->motorspeed_l = p->speedcmd -odo.delta_v;
+                p->motorspeed_l = p->speedcmd - odo.delta_v;
             }
 
             if (p->motorspeed_r < p->speedcmd)
@@ -850,7 +848,7 @@ int follow_line_left(double dist, double speed, int time)
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = LINESENSORDIST/4 ;
+        mot.follow_line_diff = LINESENSORDIST / 5;
         return 0;
     }
     else
@@ -865,7 +863,7 @@ int follow_line_right(double dist, double speed, int time)
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = -LINESENSORDIST/4 ;
+        mot.follow_line_diff = -LINESENSORDIST / 5;
         return 0;
     }
     else
@@ -960,7 +958,7 @@ float center_of_mass(double *intensity_array)
         }
     }
     float res = num / den;
-    float error =0;// 0.001035; // An small numerical error measured through simulation
+    float error = 0.001035; // An small numerical error measured through simulation
     res = res - error;
     return (res);
 }
