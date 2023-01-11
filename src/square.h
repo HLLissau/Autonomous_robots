@@ -89,7 +89,16 @@ void sm_saveArray();
 void calibrateLinesensor();
 void read_linesensor();
 float center_of_mass(double *intensity_array);
-
+int fwd(double dist, double speed, int time,int detectLine);
+int rev(double dist, double speed, int time);
+int turn(double angle, double speed, int time);
+int follow_line(double dist, double speed, int time, int follow);
+int follow_line_left(double dist, double speed, int time, int follow);
+int follow_line_right(double dist, double speed, int time, int follow);
+double find_laser_min();
+int crossdetection(double *array);
+int linedetection(double *array);
+int substate_box();
 /********************************************
  * Motion control
  */
@@ -123,14 +132,7 @@ enum {
 
 void update_motcon(motiontype *p);
 
-int fwd(double dist, double speed, int time);
-int rev(double dist, double speed, int time);
-int turn(double angle, double speed, int time);
-int follow_line(double dist, double speed, int time, int follow);
-int follow_line_left(double dist, double speed, int time, int follow);
-int follow_line_right(double dist, double speed, int time, int follow);
-double find_laser_min();
-int crossdetection(double *array);
+
 
 void segfaulthandler(int sig) {
     //    perror(NULL);
@@ -151,7 +153,7 @@ void ctrlchandler(int sig) {
 
 typedef struct
 {
-    int state, oldstate;
+    int state, oldstate,substate;
     int time;
 } smtype;
 
