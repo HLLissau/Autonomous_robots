@@ -11,7 +11,7 @@ LDFLAGS = -L${SMR}/lib
 # Our program files
 #
 PROG   = square
-HDRS   =
+HDRS   = square.h
 OBJS   = square.o serverif.o
 LIBS   = -lm /usr/local/smr/lib/librhd.a -lrobot
 
