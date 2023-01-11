@@ -63,7 +63,8 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab)
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 2 //
+#define K 0.18
+#define K2 3 //
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -177,7 +178,7 @@ motiontype mot;
 enum
 {
     ms_init,
-    ms_fwd,
+    ms_box_fwd,
     ms_box_follow_line_left,
     ms_box_push,
     ms_box_reverse,
@@ -370,10 +371,10 @@ int main(int argc, char **argv)
         switch (mission.state)
         {
         case ms_init:
-            mission.state = ms_box_follow_line_left;
+            mission.state = ms_box_fwd;
             break;
 
-        case ms_fwd:
+        case ms_box_fwd:
             if (fwd(0.3, 0.6, mission.time))
                 mission.state = ms_box_follow_line_left;
 
@@ -684,7 +685,7 @@ void update_motcon(motiontype *p)
     case mot_follow_line:;
         double ls = odo.COM + mot.follow_line_diff;
         odo.theta_ls = atan(ls / 0.25);
-        odo.delta_v = (K * odo.theta_ls);
+        odo.delta_v = (K2 * odo.theta_ls);
         printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
         if (odo.delta_v<0){
         p->motorspeed_l = p->motorspeed_l;
