@@ -370,7 +370,7 @@ int main(int argc, char **argv)
         switch (mission.state)
         {
         case ms_init:
-            mission.state = ms_fwd;
+            mission.state = ms_box_follow_line_left;
             break;
 
         case ms_fwd:
@@ -681,9 +681,11 @@ void update_motcon(motiontype *p)
             }
         }
         break;
-    case mot_follow_line:
-        odo.delta_v = (K * (atan(0.25 / (odo.COM + mot.follow_line_diff))) / 2) * 0.1;
-        printf("delta_v: %f \n", odo.delta_v);
+    case mot_follow_line:;
+        double ls = odo.COM + mot.follow_line_diff;
+        odo.theta_ls = atan(ls / 0.25);
+        odo.delta_v = (K * odo.theta_ls) / 2;
+        printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
         p->motorspeed_l = p->motorspeed_l - odo.delta_v;
         p->motorspeed_r = p->motorspeed_r + odo.delta_v;
         // if (p->motorspeed_l<0) p->motorspeed_l=0;
@@ -842,7 +844,7 @@ int follow_line_left(double dist, double speed, int time)
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = LINESENSORDIST / 10;
+        mot.follow_line_diff = LINESENSORDIST / 5;
         return 0;
     }
     else
@@ -857,7 +859,7 @@ int follow_line_right(double dist, double speed, int time)
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = -LINESENSORDIST;
+        mot.follow_line_diff = -LINESENSORDIST / 5;
         return 0;
     }
     else
@@ -948,7 +950,7 @@ float center_of_mass(double *intensity_array)
         else
         { // if line is black, we exchange i with i-1
             num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
-            den += intensity_array[i];
+            den += (intensity_array[i]);
         }
     }
     float res = num / den;
