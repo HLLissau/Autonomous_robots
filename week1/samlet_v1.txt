@@ -1,0 +1,87 @@
+laser "scanpush cmd='zoneobst'"
+wait 0.01
+maxfart=1
+goto "dist"
+%goto "gotobox"
+%goto "onthelose"
+	label "dist"
+		fwd 0.35 @v0.3
+		stop
+		stringcat $l8
+		stop
+		goto "gotobox"
+
+
+
+	label "gotobox"
+
+		followline "bl" @v0.15:($irdistfrontmiddle <0.2)
+		stop
+	goto "push"
+
+
+	label "push" % står for at skubbe boksen
+		switch ($irdistright > 0.4)
+			ignoreobstacles
+			drive @v0.2 :($drivendist> 0.69)|($cmdtime>3.5)
+			stop
+			goto "push"
+		case 1
+			ignoreobstacles
+			fwd -0.7 @v 0.3
+			drive @v -0.3 :($irdistright > 0.4)|($irdistleft > 0.4)
+			turn -90 @v 0.2
+			drive @v 0.2 :($blacklinefound==1)
+			ignoreobstacles
+			turnr 0.2 90 @v 0.3 
+			followline "bl" :($crossingblackline ==1)
+			turnr 0.15 90
+			ignoreobstacles
+			followline "bm" @v maxfart :($drivendist > 0.5)
+			stop
+			goto "onthelose"
+	endswitch
+
+
+
+	label "onthelose"
+	% next gate (via lasor sensor)
+		followline "bm" @v0.3:($l0 < 1) % stopper SMR via venstre laser sensor. hastighed skal nok sættes i praksis men lad os se.
+		fwd 0.65 @v 0.6
+		stop
+		turn 90
+
+% next gate (via IR-sensor og laser sensor)
+		drive @v 0.3 :($irdistfrontmiddle < 0.2) % kører til væg via IR-sensor
+		stop
+		turn 90
+		drive @v 0.3 :($l8 > 1)
+		fwd 0.45 @v 0.2
+		turn -90
+		fwd 0.7 @v 0.5
+		turn -90
+		% next gate
+		drive @v 0.2 :($crossingblackline==1)
+		fwd 0.25 @v 0.3
+		turn -90
+		followline "bm" @v 0.3 :($drivendist >= 1)
+		turn 180
+		followline "bm" :($crossingblackline==1)
+
+		% last gates and goal
+		fwd 0.4 @v 0.3 % virker i praksis men ikke i simulering. Så hvis det skal simuleres skal den længde sættes op.
+		followline "wm" @v 0.3: ($crossingblackline >= 1)  
+		fwd 0.25 @v 0.3
+		turn -90
+		followline "bm" @v 0.3: ($crossingblackline >= 1)
+		fwd 0.4 @v 0.4
+
+		stop
+		goto "end"
+
+
+
+
+	label "end"
+	stop
+
