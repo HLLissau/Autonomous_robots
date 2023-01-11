@@ -686,8 +686,12 @@ void update_motcon(motiontype *p)
         odo.theta_ls = atan(ls / 0.25);
         odo.delta_v = (K * odo.theta_ls) / 2;
         printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
+        if (odo.delta_v<0){
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+        } else {
         p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-        p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+        }
+
         // if (p->motorspeed_l<0) p->motorspeed_l=0;
         // if (p->motorspeed_r<0) p->motorspeed_r=0;
         //  3.5)
