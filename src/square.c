@@ -7,6 +7,7 @@
 enum {
     ms_init,
     ms_box,
+    ms_gate,
     ms_box_measure_distance,
     ms_box_fwd,
     ms_box_follow_line_left,
@@ -24,6 +25,8 @@ enum {
     ms_box_follow_line2,
     ms_box_fwd4,
     ms_box_follow_line3,
+
+    ms_gate_fwd
 };
 
 int main(int argc, char **argv) {
@@ -188,12 +191,15 @@ int main(int argc, char **argv) {
         sm_update(&mission);
         switch (mission.state) {
             case ms_init:
-                mission.state = ms_box;
+                mission.state = ms_gate;
                 break;
             case ms_box:
-                if (substate_box(dist)) mission.state = ms_end;
+                if (substate_box(dist)) mission.state = ms_gate;
                 break;
+            case ms_gate:
 
+                if (substate_gate(dist)) mission.state = ms_end;
+                break;
             case ms_end:
                 mot.cmd = mot_stop;
                 running = 0;
@@ -355,7 +361,6 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-            printf("reverse \n");
 
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
 
@@ -364,14 +369,12 @@ void update_motcon(motiontype *p) {
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
             } else if (abs(p->motorspeed_l) > sqrt(2 * ACCELLERATION * abs(d))) {  // same speed for each motor due to fwd
-                printf("deceleration\n");
                 p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
                 p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
             } else {
                 // 3.4.)
 
                 if (p->motorspeed_l > p->speedcmd) {
-                    printf("acceleration \n");
                     p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 } else {
                     p->motorspeed_l = p->speedcmd;
@@ -669,11 +672,11 @@ void writeToFile() {
     fclose(f1);
 }
 
-int substate_box(int dist) {
+int substate_box(double dist) {
     int finished = 0;
     switch (mission.substate) {
         case ms_init:
-            mission.substate=ms_box_fwd;
+           mission.substate = ms_box_fwd;
         case ms_box_fwd:
            if (fwd(.3, 0.6, mission.time, 0))
                mission.substate = ms_box_measure_distance;
@@ -693,7 +696,7 @@ int substate_box(int dist) {
            // 7.3
            if (mission.time == 0) {
                odo.theta_ls = 0;
-               dist = 1.3;
+               dist = 1.8;
                printf("entering ms_box_follow_line_left \n");
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -825,8 +828,26 @@ int substate_box(int dist) {
 
            break;
         case ms_end:
-            finished=1;
-            mission.substate=ms_init;
+           finished = 1;
+           mission.substate = ms_init;
+    }
+    return finished;
+}
+int substate_gate(double dist) {
+    int finished = 0;
+    switch (mission.substate) {
+        case ms_init:
+            mission.substate= ms_gate_fwd;
+        break;
+        case ms_gate_fwd:
+            if (mission.time == 0) printf("entering ms_gate_fwd \n");
+           if (fwd(2, 0.3, mission.time, 0)) mission.substate = ms_end;
+           break;
+        break;
+        case ms_end:
+           finished = 1;
+           mission.substate = ms_init;
+        break;
     }
     return finished;
 }

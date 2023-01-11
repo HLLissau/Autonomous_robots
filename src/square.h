@@ -98,7 +98,8 @@ int follow_line_right(double dist, double speed, int time, int follow);
 double find_laser_min();
 int crossdetection(double *array);
 int linedetection(double *array);
-int substate_box();
+int substate_box(double dist);
+int substate_gate(double dist);
 /********************************************
  * Motion control
  */
