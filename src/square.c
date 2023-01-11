@@ -35,8 +35,7 @@ void xml_proca(struct xml_in *x);
 
 componentservertype lmssrv, camsrv;
 
-symTableElement *getinputref(const char *sym_name, symTableElement *tab)
-{
+symTableElement *getinputref(const char *sym_name, symTableElement *tab) {
     int i;
     for (i = 0; i < getSymbolTableSize('r'); i++)
         if (strcmp(tab[i].name, sym_name) == 0)
@@ -44,8 +43,7 @@ symTableElement *getinputref(const char *sym_name, symTableElement *tab)
     return 0;
 }
 
-symTableElement *getoutputref(const char *sym_name, symTableElement *tab)
-{
+symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
     int i;
     for (i = 0; i < getSymbolTableSize('w'); i++)
         if (strcmp(tab[i].name, sym_name) == 0)
@@ -64,29 +62,29 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab)
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 0.18
-#define K2 3 //
+#define K2 3  //
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
 double speed = 0.2;
-double line_array[LINE_SENSOR_DATA_LENGTH]; // variable som line sensor data skal lægges ind i 7.1
-double jarray[LINE_SENSOR_DATA_LENGTH];     // normalisered værdi af line sensor.
+double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
+double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct
-{                            // input signals
-    int left_enc, right_enc; // encoderticks
+{                             // input signals
+    int left_enc, right_enc;  // encoderticks
     // parameters
-    double w;      // wheel separation
-    double cr, cl; // meters per encodertick
-                   // output signals
+    double w;       // wheel separation
+    double cr, cl;  // meters per encodertick
+                    // output signals
     double right_pos, left_pos;
-    double x, y, theta;                              // tilført 3.2
-    double Delta_theta, Delta_U, delta_Ur, delta_Ul; // tilført 3.2
-    int len;                                         // Tilført 5.using zoneobst with square
-    double delta_v, theta_ref, theta_ls;             // Tilført 7.1
-    int location_line_sensor;                        // 7.2
+    double x, y, theta;                               // tilført 3.2
+    double Delta_theta, Delta_U, delta_Ur, delta_Ul;  // tilført 3.2
+    int len;                                          // Tilført 5.using zoneobst with square
+    double delta_v, theta_ref, theta_ls;              // Tilført 7.1
+    int location_line_sensor;                         // 7.2
     // internal variables
     int left_enc_old, right_enc_old;
-    float COM; // 7.3
+    float COM;  // 7.3
 } odotype;
 
 void reset_odo(odotype *p);
@@ -102,7 +100,7 @@ float center_of_mass(double *intensity_array);
  */
 
 typedef struct
-{ // input
+{  // input
     int cmd;
     int curcmd;
     double speedcmd;
@@ -120,8 +118,7 @@ typedef struct
     double follow_line_diff;
 } motiontype;
 
-enum
-{
+enum {
     mot_stop = 1,
     mot_move,
     mot_rev,
@@ -134,25 +131,24 @@ void update_motcon(motiontype *p);
 int fwd(double dist, double speed, int time);
 int rev(double dist, double speed, int time);
 int turn(double angle, double speed, int time);
-int follow_line(double dist, double speed, int time);
-int follow_line_left(double dist, double speed, int time);
-int follow_line_right(double dist, double speed, int time);
-void segfaulthandler(int sig)
-{
+int follow_line(double dist, double speed, int time, int follow);
+int follow_line_left(double dist, double speed, int time, int follow);
+int follow_line_right(double dist, double speed, int time, int follow);
+double find_laser_min();
+int crossdetection(double *array);
+void segfaulthandler(int sig) {
     //    perror(NULL);
     printf("Seg-error\n");
     exit(1);
 }
 
-void brokenpipehandler(int sig)
-{
+void brokenpipehandler(int sig) {
     printf("mrc: broken pipe \n");
     // savelog("log");
     exit(1);
 }
 
-void ctrlchandler(int sig)
-{
+void ctrlchandler(int sig) {
     printf("mrc: ctrl-c \n");
     running = 0;
 }
@@ -175,9 +171,9 @@ odotype odo;
 smtype mission;
 motiontype mot;
 
-enum
-{
+enum {
     ms_init,
+    ms_box_measure_distance,
     ms_box_fwd,
     ms_box_follow_line_left,
     ms_box_push,
@@ -189,72 +185,60 @@ enum
     ms_end
 };
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     int arg, time = 0, opt, calibration;
     double dist = 0, angle = 0;
     // install sighandlers
-    if (1)
-    {
-        if (signal(SIGSEGV, segfaulthandler) == SIG_ERR)
-        {
+    if (1) {
+        if (signal(SIGSEGV, segfaulthandler) == SIG_ERR) {
             perror("signal");
             exit(1);
         }
     }
-    if (signal(SIGPIPE, brokenpipehandler) == SIG_ERR)
-    {
+    if (signal(SIGPIPE, brokenpipehandler) == SIG_ERR) {
         perror("signal");
         exit(1);
     }
-    if (signal(SIGINT, ctrlchandler) == SIG_ERR)
-    {
+    if (signal(SIGINT, ctrlchandler) == SIG_ERR) {
         perror("signal");
         exit(1);
     }
     robot_port = DEFAULT_ROBOTPORT;
-    while (EOF != (opt = getopt(argc, argv, "ct:v:l:s:h:u")))
-    {
-        switch (opt)
-        {
-        case 'c':
-            calibration = 1;
-            break;
-        case 'v':
-            speed = atoi(optarg) * 0.001;
-            break;
-        case 's':
-            if (optarg)
-            {
-                int port;
-                port = atoi(optarg);
-                if (port != 0)
-                    robot_port = port;
-            }
-            else
-                exit(1);
-            break;
+    while (EOF != (opt = getopt(argc, argv, "ct:v:l:s:h:u"))) {
+        switch (opt) {
+            case 'c':
+                calibration = 1;
+                break;
+            case 'v':
+                speed = atoi(optarg) * 0.001;
+                break;
+            case 's':
+                if (optarg) {
+                    int port;
+                    port = atoi(optarg);
+                    if (port != 0)
+                        robot_port = port;
+                } else
+                    exit(1);
+                break;
 
-        default:;
+            default:;
         }
     }
 
     /* Establish connection to robot sensors and actuators.
      */
-    if (rhdConnect('w', "localhost", robot_port) != 'w')
-    {
+    if (rhdConnect('w', "localhost", robot_port) != 'w') {
         printf("Can't connect to rhd \n");
         exit(EXIT_FAILURE);
     }
 
     printf("connected to robot \n");
-    if ((inputtable = getSymbolTable('r')) == NULL)
-    {
+    if ((inputtable = getSymbolTable('r')) == NULL) {
         printf("Can't connect to rhd \n");
         exit(EXIT_FAILURE);
     }
-    if ((outputtable = getSymbolTable('w')) == NULL)
-    {
+    if ((outputtable = getSymbolTable('w')) == NULL) {
         printf("Can't connect to rhd \n");
         exit(EXIT_FAILURE);
     }
@@ -284,12 +268,10 @@ int main(int argc, char **argv)
     strcpy(camsrv.name, "cameraserver");
     camsrv.status = 1;
 
-    if (camsrv.config)
-    {
+    if (camsrv.config) {
         int errno = 0;
         camsrv.sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (camsrv.sockfd < 0)
-        {
+        if (camsrv.sockfd < 0) {
             perror(strerror(errno));
             fprintf(stderr, " Can not make  socket\n");
             exit(errno);
@@ -307,21 +289,18 @@ int main(int argc, char **argv)
 
     /* Create endpoint */
     lmssrv.config = 1;
-    if (lmssrv.config)
-    {
+    if (lmssrv.config) {
         char buf[256];
         int errno = 0, len;
         lmssrv.sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (lmssrv.sockfd < 0)
-        {
+        if (lmssrv.sockfd < 0) {
             perror(strerror(errno));
             fprintf(stderr, " Can not make  socket\n");
             exit(errno);
         }
 
         serverconnect(&lmssrv);
-        if (lmssrv.connected)
-        {
+        if (lmssrv.connected) {
             xmllaser = xml_in_init(4096, 32);
             printf(" laserserver xml initialized \n");
             len = sprintf(buf, "scanpush cmd='zoneobst'\n");
@@ -345,16 +324,13 @@ int main(int argc, char **argv)
     running = 1;
     mission.state = ms_init;
     mission.oldstate = -1;
-    while (running)
-    {
-        if (lmssrv.config && lmssrv.status && lmssrv.connected)
-        {
+    while (running) {
+        if (lmssrv.config && lmssrv.status && lmssrv.connected) {
             while ((xml_in_fd(xmllaser, lmssrv.sockfd) > 0))
                 xml_proca(xmllaser);
         }
 
-        if (camsrv.config && camsrv.status && camsrv.connected)
-        {
+        if (camsrv.config && camsrv.status && camsrv.connected) {
             while ((xml_in_fd(xmldata, camsrv.sockfd) > 0))
                 xml_proc(xmldata);
         }
@@ -368,107 +344,109 @@ int main(int argc, char **argv)
         / mission statemachine
         */
         sm_update(&mission);
-        switch (mission.state)
-        {
-        case ms_init:
-            mission.state = ms_box_fwd;
-            break;
+        switch (mission.state) {
+            case ms_init:
+                mission.state = ms_box_fwd;
+                break;
 
-        case ms_box_fwd:
-            if (fwd(0.3, 0.6, mission.time))
-                mission.state = ms_box_follow_line_left;
+            case ms_box_fwd:
+                if (fwd(.3, 0.6, mission.time))
+                    mission.state = ms_box_measure_distance;
 
-            break;
+                break;
+            case ms_box_measure_distance:;
+                if (mission.time < 20) {
+                    mission.state = ms_box_measure_distance;
+                } else {
+                    double min = find_laser_min();
+                    printf("min laser distance: %f \n", min);
+                    mission.state = ms_box_follow_line_left;
+                }
+                break;
+            case ms_box_follow_line_left:
+                // 7.3
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    dist = 3.2;
+                }
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line_left(dist, speed, mission.time, 1))
 
-        case ms_box_follow_line_left:
-            // 7.3
-            if (mission.time == 0)
-            {
-                odo.theta_ls = 0;
-                dist = 3.2;
-            }
-            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-            if (follow_line_left(dist, speed, mission.time))
-                mission.state = ms_box_push;
+                    mission.state = ms_box_push;
 
-            break;
-        case ms_box_push:
-            if (mission.time == 0)
-            {
-                odo.theta_ref = odo.theta;
-                odo.theta_ls = 0;
-                speed = 0.3;
-                dist = 0.1;
-                printf("entering ms_box_push \n");
-            }
-            if (fwd(dist, speed, mission.time))
-                mission.state = ms_box_reverse;
-            break;
-        case ms_box_reverse:
-            if (mission.time == 0)
-            {
-                odo.theta_ref = odo.theta;
-                odo.theta_ls = 0;
+                break;
+            case ms_box_push:
+                if (mission.time == 0) {
+                    odo.theta_ref = odo.theta;
+                    odo.theta_ls = 0;
+                    speed = 0.3;
+                    dist = 0.1;
+                    printf("entering ms_box_push \n");
+                }
+                if (fwd(dist, speed, mission.time))
+                    mission.state = ms_box_reverse;
+                break;
+            case ms_box_reverse:
+                if (mission.time == 0) {
+                    odo.theta_ref = odo.theta;
+                    odo.theta_ls = 0;
 
-                speed = -0.6;
-                dist = -1.5;
-                printf("entering ms_box_reverse \n");
-            }
-            if (rev(dist, speed, mission.time))
-                mission.state = ms_turn;
-            break;
-        case ms_turn:
-            if (mission.time == 0)
-            {
-                odo.theta_ref = (-3 + odo.theta);
-                printf("entering ms_box_turn \n");
-            }
-            if (turn(-3, 0.3, mission.time))
-                mission.state = ms_box_follow_line_left2;
+                    speed = -0.6;
+                    dist = -1;
+                    printf("entering ms_box_reverse \n");
+                }
+                if (rev(dist, speed, mission.time))
+                    mission.state = ms_turn;
+                break;
+            case ms_turn:
+                if (mission.time == 0) {
+                    odo.theta_ref = (-M_PI + odo.theta);
+                    printf("entering ms_box_turn \n");
+                }
+                if (turn(-M_PI, 0.3, mission.time))
+                    mission.state = ms_box_follow_line_left2;
 
-            break;
+                break;
 
-        case ms_box_follow_line_left2:
-            // 7.3
-            if (mission.time == 0)
-            {
-                odo.theta_ls = odo.theta_ref;
-                speed = 0.1;
-                dist = 1;
-            }
-            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-            if (follow_line_left(dist, speed, mission.time))
-                mission.state = ms_box_follow_line;
+            case ms_box_follow_line_left2:
+                // 7.3
+                if (mission.time == 0) {
+                    odo.theta_ls = odo.theta_ref;
+                    speed = 0.1;
+                    dist = 4;
+                }
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line_left(dist, speed, mission.time, 0))
+                    mission.state = ms_box_follow_line;
 
-            break;
-        case ms_box_follow_line:
-            // 7.3
-            if (mission.time == 0)
-            {
-                odo.theta_ls = 0;
-                dist = 2;
-            }
+                break;
+            case ms_box_follow_line:
+                // 7.3
+                if (mission.time == 0) {
+                    odo.theta_ls = 0;
+                    dist = 2;
+                }
 
-            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-            if (follow_line(dist, speed, mission.time))
-                mission.state = ms_end;
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line(dist, speed, mission.time, 1))
+                    mission.state = ms_end;
 
-            break;
+                break;
 
-        case ms_follow_line_right:
-            // 7.3
-            if (mission.time == 0)
-                odo.theta_ls = 0;
-            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-            if (follow_line_right(dist, speed, mission.time))
-                mission.state = ms_end;
+            case ms_follow_line_right:
+                // 7.3
+                if (mission.time == 0)
+                    odo.theta_ls = 0;
+                // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+                if (follow_line_right(dist, speed, mission.time, 1))
+                    mission.state = ms_end;
 
-            break;
+                break;
 
-        case ms_end:
-            mot.cmd = mot_stop;
-            running = 0;
-            break;
+            case ms_end:
+                mot.cmd = mot_stop;
+                running = 0;
+                break;
         }
         /*  end of mission  */
 
@@ -508,16 +486,14 @@ int main(int argc, char **argv)
  * roll-over has to be detected and corrected.
  */
 
-void reset_odo(odotype *p)
-{
+void reset_odo(odotype *p) {
     p->right_pos = p->left_pos = 0.0;
     p->right_enc_old = p->right_enc;
     p->left_enc_old = p->left_enc;
-    p->x = p->y = p->theta = 0.0; // 3.2
+    p->x = p->y = p->theta = 0.0;  // 3.2
 }
 
-void update_odo(odotype *p)
-{
+void update_odo(odotype *p) {
     int delta;
 
     delta = p->right_enc - p->right_enc_old;
@@ -548,41 +524,39 @@ void update_odo(odotype *p)
     //  tilført
 }
 
-void update_motcon(motiontype *p)
-{
-    sm_saveArray();                   /*ADDED*/
-    read_linesensor();                // added 7.2
-    calibrateLinesensor();            // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
-    odo.COM = center_of_mass(jarray); // 7.3
+void update_motcon(motiontype *p) {
+    sm_saveArray();         /*ADDED*/
+    read_linesensor();      // added 7.2
+    calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
+    crossdetection(jarray);
+    odo.COM = center_of_mass(jarray);  // 7.3
 
-    if (p->cmd != 0)
-    {
+    if (p->cmd != 0) {
         p->finished = 0;
-        switch (p->cmd)
-        {
-        case mot_stop:
-            p->curcmd = mot_stop;
-            break;
-        case mot_move:
-            p->startpos = (p->left_pos + p->right_pos) / 2;
-            p->curcmd = mot_move;
-            break;
-        case mot_rev:
-            p->startpos = (p->left_pos + p->right_pos) / 2;
-            p->curcmd = mot_rev;
-            break;
+        switch (p->cmd) {
+            case mot_stop:
+                p->curcmd = mot_stop;
+                break;
+            case mot_move:
+                p->startpos = (p->left_pos + p->right_pos) / 2;
+                p->curcmd = mot_move;
+                break;
+            case mot_rev:
+                p->startpos = (p->left_pos + p->right_pos) / 2;
+                p->curcmd = mot_rev;
+                break;
 
-        case mot_turn:
-            if (p->angle > 0)
-                p->startpos = p->right_pos;
-            else
-                p->startpos = p->left_pos;
-            p->curcmd = mot_turn;
-            break;
-        case mot_follow_line:
-            p->startpos = (p->left_pos + p->right_pos) / 2;
-            p->curcmd = mot_follow_line;
-            break;
+            case mot_turn:
+                if (p->angle > 0)
+                    p->startpos = p->right_pos;
+                else
+                    p->startpos = p->left_pos;
+                p->curcmd = mot_turn;
+                break;
+            case mot_follow_line:
+                p->startpos = (p->left_pos + p->right_pos) / 2;
+                p->curcmd = mot_follow_line;
+                break;
         }
 
         p->cmd = 0;
@@ -591,346 +565,310 @@ void update_motcon(motiontype *p)
     double d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     double d_turn;
 
-    switch (p->curcmd)
-    {
-    case mot_stop:
-        p->motorspeed_l = 0;
-        p->motorspeed_r = 0;
-        break;
-    case mot_move:
-        // 7.1 we change the motors to stay on course
-        odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
-        p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-        p->motorspeed_r = p->motorspeed_r + odo.delta_v;
-        // if (p->motorspeed_l<0) p->motorspeed_l=0;
-        // if (p->motorspeed_r<0) p->motorspeed_r=0;
-        //  3.5)
-
-        if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist)
-        {
-            p->finished = 1;
+    switch (p->curcmd) {
+        case mot_stop:
             p->motorspeed_l = 0;
             p->motorspeed_r = 0;
-        }
-        else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d))
-        { // same speed for each motor due to fwd
-            p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-            p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-        }
-        else
-        {
-            // 3.4.)
-            if (p->motorspeed_l < p->speedcmd)
-            {
-                p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_l = p->speedcmd - odo.delta_v;
-            }
+            break;
+        case mot_move:
+            // 7.1 we change the motors to stay on course
+            odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
 
-            if (p->motorspeed_r < p->speedcmd)
-            {
-                p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_r = p->speedcmd + odo.delta_v;
-            }
-        }
-        break;
-    case mot_rev:
-        // 7.1 we change the motors to stay on course
-        //  3.5)
-        printf("reverse \n");
-
-        d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
-
-        if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist)
-        {
-            p->finished = 1;
-            p->motorspeed_l = 0;
-            p->motorspeed_r = 0;
-        }
-        else if (abs(p->motorspeed_l) > sqrt(2 * ACCELLERATION * abs(d)))
-        { // same speed for each motor due to fwd
-            printf("deceleration\n");
-            p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-            p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-        }
-        else
-        {
-            // 3.4.)
-
-            if (p->motorspeed_l > p->speedcmd)
-            {
-                printf("acceleration \n");
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
                 p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_l = p->speedcmd;
-            }
-
-            if (p->motorspeed_r > p->speedcmd)
-            {
                 p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_r = p->speedcmd + odo.delta_v;
-            }
-        }
-        break;
-    case mot_follow_line:;
-        double ls = odo.COM + mot.follow_line_diff;
-        odo.theta_ls = atan(ls / 0.25);
-        odo.delta_v = (K2 * odo.theta_ls);
-        printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
-        if (odo.delta_v<0){
-        p->motorspeed_l = p->motorspeed_l;
-        p->motorspeed_r=p->motorspeed_l- odo.delta_v;
-        } else {
-        p->motorspeed_r = p->motorspeed_r;
-        p->motorspeed_l =p->motorspeed_r+ odo.delta_v;
-        }
-        // if (p->motorspeed_l<0) p->motorspeed_l=0;
-        // if (p->motorspeed_r<0) p->motorspeed_r=0;
-        //  3.5)
+            } else {
+                // 3.4.)
+                if (p->motorspeed_l < p->speedcmd) {
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                }
 
-        if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist)
-        {
-            p->finished = 1;
-            p->motorspeed_l = 0;
-            p->motorspeed_r = 0;
-        }
-        else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d))
-        { // same speed for each motor due to fwd
-            p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-            p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-        }
-        else
-        {
-            // 3.4.)
-            if (p->motorspeed_l < p->speedcmd)
-            {
-                p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_l = p->speedcmd -odo.delta_v;
-            }
-
-            if (p->motorspeed_r < p->speedcmd)
-            {
-                p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-            }
-            else
-            {
-                p->motorspeed_r = p->speedcmd + odo.delta_v;
-            }
-        }
-        break;
-
-        break;
-    case mot_turn:
-        d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
-
-        if (p->angle > 0)
-        {
-            if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn))
-            {
-                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-                p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
-            }
-            else if (odo.theta * p->w < odo.theta_ref * p->w)
-            { // p->right_pos-p->startpos
-                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-                p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-
-                if (p->motorspeed_r > p->speedcmd / 2)
-                {
-                    p->motorspeed_r = p->speedcmd / 2;
-                    p->motorspeed_l = -p->speedcmd / 2;
+                if (p->motorspeed_r < p->speedcmd) {
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
                 }
             }
-            else
-            {
-                p->motorspeed_r = 0;
-                p->motorspeed_l = 0;
-                p->finished = 1;
-            }
-        }
-        else
-        {
-            if (p->motorspeed_l > sqrt(2 * ACCELLERATION * fabs(d_turn)))
-            { // same speed for each motor due to fwd
-                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-                p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
-            }
-            else if (odo.theta * p->w > (odo.theta_ref * p->w))
-            {
-                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-                p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+            break;
+        case mot_rev:
+            // 7.1 we change the motors to stay on course
+            //  3.5)
+            printf("reverse \n");
 
-                if (p->motorspeed_l > p->speedcmd / 2)
-                {
-                    p->motorspeed_r = -p->speedcmd / 2;
-                    p->motorspeed_l = p->speedcmd / 2;
+            d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
+
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (abs(p->motorspeed_l) > sqrt(2 * ACCELLERATION * abs(d))) {  // same speed for each motor due to fwd
+                printf("deceleration\n");
+                p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+            } else {
+                // 3.4.)
+
+                if (p->motorspeed_l > p->speedcmd) {
+                    printf("acceleration \n");
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd;
+                }
+
+                if (p->motorspeed_r > p->speedcmd) {
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                }
+            }
+            break;
+        case mot_follow_line:;
+            double ls = odo.COM + mot.follow_line_diff;
+            odo.theta_ls = atan(ls / 0.25);
+            odo.delta_v = (K2 * odo.theta_ls);
+            // printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
+            if (odo.delta_v < 0) {
+                p->motorspeed_l = p->motorspeed_l;
+                p->motorspeed_r = p->motorspeed_l - odo.delta_v;
+            } else {
+                p->motorspeed_r = p->motorspeed_r;
+                p->motorspeed_l = p->motorspeed_r + odo.delta_v;
+            }
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
+
+            if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {
+                p->finished = 1;
+                p->motorspeed_l = 0;
+                p->motorspeed_r = 0;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+            } else {
+                // 3.4.)
+                if (p->motorspeed_l < p->speedcmd) {
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_l = p->speedcmd - odo.delta_v;
+                }
+
+                if (p->motorspeed_r < p->speedcmd) {
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else {
+                    p->motorspeed_r = p->speedcmd + odo.delta_v;
+                }
+            }
+            break;
+
+            break;
+        case mot_turn:
+            d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
+
+            if (p->angle > 0) {
+                if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d_turn)) {
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                } else if (odo.theta * p->w < odo.theta_ref * p->w) {  // p->right_pos-p->startpos
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+
+                    if (p->motorspeed_r > p->speedcmd / 2) {
+                        p->motorspeed_r = p->speedcmd / 2;
+                        p->motorspeed_l = -p->speedcmd / 2;
+                    }
+                } else {
+                    p->motorspeed_r = 0;
+                    p->motorspeed_l = 0;
+                    p->finished = 1;
+                }
+            } else {
+                if (p->motorspeed_l > sqrt(2 * ACCELLERATION * fabs(d_turn))) {  // same speed for each motor due to fwd
+                    p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                    p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                } else if (odo.theta * p->w > (odo.theta_ref * p->w)) {
+                    p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+
+                    if (p->motorspeed_l > p->speedcmd / 2) {
+                        p->motorspeed_r = -p->speedcmd / 2;
+                        p->motorspeed_l = p->speedcmd / 2;
+                    }
+                }
+
+                else {
+                    p->motorspeed_l = 0;
+                    p->motorspeed_r = 0;
+                    p->finished = 1;
                 }
             }
 
-            else
-            {
-                p->motorspeed_l = 0;
-                p->motorspeed_r = 0;
-                p->finished = 1;
-            }
-        }
-
-        break;
+            break;
     }
 }
 
-int fwd(double dist, double speed, int time)
-{
-    if (time == 0)
-    {
+double find_laser_min() {
+    double min = laserpar[0];
+    for (int i = 1; i < 9; i++) {
+        if (laserpar[i] < min) {
+            min = laserpar[i];
+        }
+    }
+    return min;
+}
+
+int fwd(double dist, double speed, int time) {
+    if (time == 0) {
         mot.cmd = mot_move;
         mot.speedcmd = speed;
         mot.dist = dist;
         return 0;
-    }
-    else
+    } else
         return mot.finished;
 }
-int rev(double dist, double speed, int time)
-{
-    if (time == 0)
-    {
+int rev(double dist, double speed, int time) {
+    if (time == 0) {
         mot.cmd = mot_rev;
         mot.speedcmd = speed;
         mot.dist = dist;
         return 0;
-    }
-    else
+    } else
         return mot.finished;
 }
-int turn(double angle, double speed, int time)
-{
-    if (time == 0)
-    {
+int turn(double angle, double speed, int time) {
+    if (time == 0) {
         mot.cmd = mot_turn;
         mot.speedcmd = speed;
         mot.angle = angle;
         return 0;
-    }
-    else
+    } else
         return mot.finished;
 }
-int follow_line(double dist, double speed, int time)
-{
-    if (time == 0)
-    {
+int follow_line(double dist, double speed, int time, int stop_at_cross) {
+    if (time == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
         mot.follow_line_diff = 0;
         return 0;
-    }
-    else
-    {
+    } else {
+        if (stop_at_cross && !mot.finished) {
+            mot.finished = crossdetection(jarray);
+        }
         return mot.finished;
     }
 }
-int follow_line_left(double dist, double speed, int time)
-{
-    if (time == 0)
-    {
+int follow_line_left(double dist, double speed, int time, int stop_at_cross) {
+    if (time == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = LINESENSORDIST/4 ;
+        mot.follow_line_diff = LINESENSORDIST / 10;
         return 0;
-    }
-    else
-    {
+    } else {
+        if (stop_at_cross && !mot.finished) {
+            mot.finished = crossdetection(jarray);
+        }
         return mot.finished;
     }
 }
-int follow_line_right(double dist, double speed, int time)
-{
-    if (time == 0)
-    {
+int follow_line_right(double dist, double speed, int time, int stop_at_cross) {
+    if (time == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = -LINESENSORDIST/4 ;
+        mot.follow_line_diff = -LINESENSORDIST / 10;
         return 0;
-    }
-    else
-    {
+    } else {
+        if (stop_at_cross && !mot.finished) {
+            mot.finished = crossdetection(jarray);
+        }
         return mot.finished;
     }
 }
-void sm_update(smtype *p)
-{
-    if (p->state != p->oldstate)
-    {
+void sm_update(smtype *p) {
+    if (p->state != p->oldstate) {
         p->time = 0;
         p->oldstate = p->state;
-    }
-    else
-    {
+    } else {
         p->time++;
     }
 }
 
-void read_linesensor()
-{
-    for (int count = 0; count < LINE_SENSOR_DATA_LENGTH; count++)
-    {
+void read_linesensor() {
+    for (int count = 0; count < LINE_SENSOR_DATA_LENGTH; count++) {
         line_array[count] = linesensor->data[count];
     }
 }
 
-void calibrateLinesensor()
-{
-    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++)
-    {
-        jarray[i] = 1 - (line_array[i] / 255); // setting higher mass for black
+void calibrateLinesensor() {
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        jarray[i] = (line_array[i] / 255);  // setting higher mass for black
     }
 }
 
-float minIntensity(double *intensity_array)
-{
+float minIntensity(double *intensity_array) {
     int loc = 0;
-    for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++)
-    {
-        if (intensity_array[c] < intensity_array[loc])
-        {
+    for (int c = 1; c < LINE_SENSOR_DATA_LENGTH; c++) {
+        if (intensity_array[c] < intensity_array[loc]) {
             loc = c;
         }
     }
     return (loc + 1);
 }
+int crossdetection(double *intensity_array) {
+    int amount = 0;
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        if (intensity_array[i] == 0) amount++;
+    }
+    return (amount > 5);
+}
+
+// com = center_of_mass(array_with_intensities);
+// calculate where the line is in comparison to the line sensors 1-8, where 4.555 is the middle value
+float center_of_mass(double *intensity_array) {
+    float num = 0;
+    float den = 0;
+
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        if (!intensity_array[i] == 0) {
+            num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
+            den += intensity_array[i];
+        } else {  // if line is black, we exchange i with i-1
+            num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
+            den += (1 - intensity_array[i]);
+        }
+    }
+    float res = num / den;
+    float error = 0;  // 0.001035; // An small numerical error measured through simulation
+    res = res - error;
+    return (res);
+}
 
 int arrayCounter = 0;
 float array[25][10000];
-void sm_saveArray()
-{
+void sm_saveArray() {
     array[0][arrayCounter] = mission.time;
     array[1][arrayCounter] = mot.motorspeed_l;
     array[2][arrayCounter] = mot.motorspeed_r;
     array[3][arrayCounter] = odo.x;
     array[4][arrayCounter] = odo.y;
     array[5][arrayCounter] = odo.theta;
-    for (int i = 0; i < 9; i++)
-    {
+    for (int i = 0; i < 9; i++) {
         array[6 + i][arrayCounter] = laserpar[i];
     }
-    for (int i = 0; i < 8; i++)
-    {
+    for (int i = 0; i < 8; i++) {
         array[15 + i][arrayCounter] = jarray[i];
     }
     array[23][arrayCounter] = odo.location_line_sensor;
@@ -939,34 +877,7 @@ void sm_saveArray()
     arrayCounter++;
 }
 
-// com = center_of_mass(array_with_intensities);
-// calculate where the line is in comparison to the line sensors 1-8, where 4.555 is the middle value
-float center_of_mass(double *intensity_array)
-{
-    float num = 0;
-    float den = 0;
-
-    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++)
-    {
-        if (!intensity_array[i] == 0)
-        {
-            num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
-            den += intensity_array[i];
-        }
-        else
-        { // if line is black, we exchange i with i-1
-            num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
-            den += (intensity_array[i]);
-        }
-    }
-    float res = num / den;
-    float error =0;// 0.001035; // An small numerical error measured through simulation
-    res = res - error;
-    return (res);
-}
-
-void writeToFile()
-{
+void writeToFile() {
     FILE *f1;
     FILE *f2;
     FILE *f3;
@@ -974,8 +885,7 @@ void writeToFile()
     f2 = fopen("/home/smr/offline/square/laserlog.dat", "w");
     f3 = fopen("/home/smr/offline/square/linelog.dat", "w");
 
-    for (int i = 0; i < arrayCounter; i++)
-    {
+    for (int i = 0; i < arrayCounter; i++) {
         fprintf(f1, "%.5d  %.3f  %.3f  %.3f  %.3f  %.3f \n", (int)array[0][i],
                 array[1][i], array[2][i], array[3][i], array[4][i],
                 array[5][i]);
