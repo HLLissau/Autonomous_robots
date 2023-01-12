@@ -1,0 +1,119 @@
+laser "scanpush cmd='zoneobst'"
+wait 0.01
+
+max=1
+%goto "dist"
+%goto "gotobox"
+goto "onthelose"
+goto "garage"
+	label "dist"
+		fwd 0.35 @v0.3
+		stop
+		stringcat $l8
+		stop
+		goto "gotobox"
+
+
+
+	label "gotobox"
+		wait 0.5
+		followline "bl" @v0.1:($irdistfrontmiddle <0.2)
+		stop
+	goto "push"
+
+
+	label "push" % står for at skubbe boksen
+		switch ($irdistright > 0.4)
+			ignoreobstacles
+			drive @v0.4 :($drivendist> 0.69)|($cmdtime>2)
+			stop
+			goto "push"
+		case 1
+			ignoreobstacles
+			fwd -0.7 @v 0.4
+			drive @v -0.3 :($irdistright > 0.4)|($irdistleft > 0.4)
+			turn -90 @v 0.2
+			drive @v 0.2 :($blacklinefound==1)
+			ignoreobstacles
+			turnr 0.2 90 @v 0.2 
+			followline "bl" :($crossingblackline ==1)
+			turnr 0.15 90
+			ignoreobstacles
+			followline "bm" @v 0.3 :($drivendist > 0.6)
+			stop
+			goto "onthelose"
+	endswitch
+
+
+
+	label "onthelose"
+	% next gate (via lasor sensor)
+		wait 0.5
+		followline "bm" @v0.3:($l0 < 1) % stopper SMR via venstre laser sensor. hastighed skal nok sættes i praksis men lad os se.
+		fwd 0.65 @v 0.2
+		stop
+		turn 95 @v0.2 % praktisk værdi set fra bane kørsel 
+
+% next gate (via IR-sensor og laser sensor)
+		drive @v 0.3 :($irdistfrontmiddle < 0.2) % kører til væg via IR-sensor normal værdi 0.2 
+		stop
+		turn 90
+		drive @v 0.3 :($l8 > 1)
+		fwd 0.42 @v 0.2 % normal værdi 0.45 
+		turn -90
+		fwd 0.75 @v 0.5
+		turn -90
+		% next gate
+		drive @v 0.2 :($crossingblackline==1)
+		fwd 0.25 @v 0.3
+		turn -90
+		followline "bm" @v 0.3 :($drivendist >= 0.8)
+		turn 180
+		followline "bm" :($crossingblackline==1)
+
+		% last gates and goal
+		fwd 0.4 @v 0.3 % virker i praksis men ikke i simulering. Så hvis det skal simuleres skal den længde sættes op.
+		followline "wm" @v 0.25: ($crossingblackline >= 1)  
+		fwd 0.25 @v 0.3
+		turn -90
+		followline "bm" @v 0.3: ($crossingblackline >= 1)
+		fwd 0.4 @v 0.4
+
+		stop
+		goto "garage"
+
+
+
+	label "garage"
+	% drive next to garage
+		drive @v 0.3 :($irdistfrontmiddle < 0.2)
+		turn 90
+		drive @v 0.3 :($l8 > 0.8)
+		fwd 0.5 @v 0.5
+		turn -90
+	%	 2. method to open garage (drive past)
+		fwd 1.3 @v 0.5
+		turn -90
+		fwd 0.11 @v 0.5
+		turn -90
+		ignoreobstacles
+		fwd 1.6 @v 0.5
+
+% move inside garage
+		turn 90 @v 0.3
+		ignoreobstacles		
+		drive @v 0.5 :($blacklinefound==1)
+		ignoreobstacles
+		fwd 0.16 @v 0.5
+		turn 90
+		%ignoreobstacles
+		drive @v 0.3 :($irdistfrontmiddle < 0.15)
+
+		stop
+		goto "end"
+
+		
+	label "end"
+	stop
+
+
