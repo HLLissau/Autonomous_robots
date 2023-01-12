@@ -14,6 +14,7 @@ enum {
     ms_gate,
     ms_double_gate,
     ms_white_line,
+    ms_garage,
     ms_box_measure_distance,
     ms_box_fwd,
     ms_box_follow_line_left,
@@ -52,6 +53,21 @@ enum {
     ms_white_line_fwd2,
     ms_white_line_turn,
     ms_white_line_follow_line2,
+    ms_garage_fwd1,
+    ms_garage_turn1,
+    ms_garage_fwd2,
+    ms_garage_fwd3,
+    ms_garage_turn2,
+    ms_garage_fwd4,
+    ms_garage_turn3,
+    ms_garage_fwd5,
+    ms_garage_turn4,
+    ms_garage_fwd6,
+    ms_garage_turn5,
+    ms_garage_fwd7,
+    ms_garage_fwd8,
+    ms_garage_turn6,
+    ms_garage_fwd9,
 };
 
 int main(int argc, char **argv) {
@@ -234,6 +250,10 @@ int main(int argc, char **argv) {
                 break;
             case ms_white_line:
                 if (substate_white_line(dist))
+                    mission.state = ms_garage;
+                break;
+            case ms_garage:
+                if (substate_garage(dist))
                     mission.state = ms_end;
                 break;
             case ms_end:
@@ -978,13 +998,13 @@ int substate_double_gate(double dist) {
         case ms_double_gate_fwd2:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd2 \n");
-           if (fwd(1, 0.3, mission.time_, 0, 0, 1))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(1, 0.3, mission.time_, 0, 0, 1))
                mission.substate = ms_double_gate_fwd3;
            break;
         case ms_double_gate_fwd3:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd3 \n");
-           if (fwd(0.45, 0.2, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.45, 0.2, mission.time_, 0, 0, 0))
                mission.substate = ms_double_gate_turn2;
            break;
         case ms_double_gate_turn2:
@@ -998,7 +1018,7 @@ int substate_double_gate(double dist) {
         case ms_double_gate_fwd4:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd4 \n");
-           if (fwd(0.7, 0.5, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.7, 0.5, mission.time_, 0, 0, 0))
                mission.substate = ms_double_gate_turn3;
            break;
         case ms_double_gate_turn3:
@@ -1012,13 +1032,13 @@ int substate_double_gate(double dist) {
         case ms_double_gate_drive_to_line:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_drive_to_line \n");
-           if (fwd(2, 0.2, mission.time_, 1, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(2, 0.2, mission.time_, 1, 0, 0))
                mission.substate = ms_double_gate_past_line;
            break;
         case ms_double_gate_past_line:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_past_line \n");
-           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_double_gate_turn4;
            break;
         case ms_double_gate_turn4:
@@ -1032,13 +1052,13 @@ int substate_double_gate(double dist) {
         case ms_double_gate_rev:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_rev \n");
-           if (rev(-0.7, -0.6, mission.time_))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (rev(-0.7, -0.6, mission.time_))
                mission.substate = ms_double_gate_follow_line;
            break;
         case ms_double_gate_follow_line:
            if (mission.time_ == 0)
                printf("entering ms_double_gate_follow_line \n");
-           if (follow_line(1.5, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(1.5, 0.3, mission.time_, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -1058,19 +1078,19 @@ int substate_white_line(double dist) {
         case ms_white_line_fwd1:
            if (mission.time_ == 0)
                printf("entering ms_white_line_fwd1 \n");
-           if (fwd(0.1, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.1, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_follow_line1:
            if (mission.time_ == 0)
                printf("entering ms_white_line_follow_line1 \n");
-           if (follow_line(4.5, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(4.5, 0.3, mission.time_, 1, 0))
                mission.substate = ms_white_line_fwd2;
            break;
         case ms_white_line_fwd2:
            if (mission.time_ == 0)
                printf("entering ms_white_line_fwd2 \n");
-           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_white_line_turn;
            break;
         case ms_white_line_turn:
@@ -1084,7 +1104,124 @@ int substate_white_line(double dist) {
         case ms_white_line_follow_line2:
            if (mission.time_ == 0)
                printf("entering ms_white_line_follow_line2 \n");
-           if (follow_line(2, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(2, 0.3, mission.time_, 1, 0))
+               mission.substate = ms_end;
+           break;
+        case ms_end:
+           finished = 1;
+           mission.substate = ms_init;
+           break;
+    }
+    return finished;
+}
+
+int substate_garage(double dist) {
+    int finished = 0;
+    switch (mission.substate) {
+        case ms_init:
+           mission.substate = ms_garage_fwd1;
+           break;
+        case ms_garage_fwd1:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd1 \n");
+           if (fwd(0.5, 0.3, mission.time_, 0, 1, 0))
+               mission.substate = ms_garage_turn1;
+           break;
+        case ms_garage_turn1:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn1 \n");
+           }
+           if (turn(M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd2;
+           break;
+        case ms_garage_fwd2:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd2 \n");
+           if (fwd(1.5, 0.3, mission.time_, 0, 0, 1))
+               mission.substate = ms_garage_fwd3;
+           break;
+        case ms_garage_fwd3:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd3 \n");
+           if (fwd(0.5, 0.5, mission.time_, 0, 0, 0))
+               mission.substate = ms_garage_turn2;
+           break;
+        case ms_garage_turn2:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (-M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn2 \n");
+           }
+           if (turn(-M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd4;
+           break;
+        case ms_garage_fwd4:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd4 \n");
+           if (fwd(1.3, 0.5, mission.time_, 0, 0, 0))
+               mission.substate = ms_garage_turn3;
+           break;
+        case ms_garage_turn3:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (-M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn3 \n");
+           }
+           if (turn(-M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd5;
+           break;
+        case ms_garage_fwd5:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd5 \n");
+           if (fwd(0.11, 0.5, mission.time_, 0, 0, 0))
+               mission.substate = ms_garage_turn4;
+           break;
+        case ms_garage_turn4:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (-M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn4 \n");
+           }
+           if (turn(-M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd6;
+           break;
+        case ms_garage_fwd6:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd6 \n");
+           if (fwd(1.6, 0.5, mission.time_, 0, 0, 0))
+               mission.substate = ms_garage_turn5;
+           break;
+        // move inside garage
+        case ms_garage_turn5:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn5 \n");
+           }
+           if (turn(M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd7;
+           break;
+        case ms_garage_fwd7:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd7 \n");
+           if (fwd(0.5, 0.5, mission.time_, 1, 0, 0))
+               mission.substate = ms_garage_fwd8;
+           break;
+        case ms_garage_fwd8:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd8 \n");
+           if (fwd(0.16, 0.5, mission.time_, 0, 0, 0))
+               mission.substate = ms_garage_turn6;
+           break;
+        case ms_garage_turn6:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (M_PI_2 + odo.theta);
+               printf("entering ms_garage_turn6 \n");
+           }
+           if (turn(M_PI_2, 0.3, mission.time_))
+               mission.substate = ms_garage_fwd9;
+           break;
+        case ms_garage_fwd9:
+           if (mission.time_ == 0)
+               printf("entering ms_garage_fwd9 \n");
+           if (fwd(0.5, 0.5, mission.time_, 0, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:

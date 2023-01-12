@@ -107,6 +107,7 @@ int substate_box(double dist);
 int substate_gate(double dist);
 int substate_double_gate(double dist);
 int substate_white_line(double dist);
+int substate_garage(double dist);
 /********************************************
  * Motion control
  */
