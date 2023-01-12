@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "componentserver.h"
 #include "rhd.h"
@@ -63,6 +64,8 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define LINESENSORDIST 0.0185
 
 double speed = 0.2;
+clock_t start, end;
+double cpu_time_used;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
 typedef struct
