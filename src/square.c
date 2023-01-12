@@ -4,6 +4,10 @@
  */
 #include "square.h"
 
+#include "time.h"
+
+#define TEST 1
+
 enum {
     ms_init,
     ms_box,
@@ -51,7 +55,7 @@ enum {
 };
 
 int main(int argc, char **argv) {
-    int arg, time = 0, opt, calibration;
+    int arg, time_ = 0, opt, calibration;
     double dist = 0, angle = 0;
     // install sighandlers
     if (1) {
@@ -207,11 +211,13 @@ int main(int argc, char **argv) {
         update_odo(&odo);
 
         /****************************************
-        / mission statemachine
-        */
+        / main mission statemachine
+        / - Each main case leads to a substate
+        ****************************************/
         sm_update(&mission);
         switch (mission.state) {
             case ms_init:
+                start = time(NULL);
                 mission.state = ms_box;
                 break;
             case ms_box:
@@ -233,8 +239,11 @@ int main(int argc, char **argv) {
             case ms_end:
                 mot.cmd = mot_stop;
                 running = 0;
+                stop = time(NULL);
+                printf("It took %ld seconds to complete the track\n", stop - start);
                 break;
         }
+
         /*  end of mission  */
 
         mot.left_pos = odo.left_pos;
@@ -244,9 +253,9 @@ int main(int argc, char **argv) {
         speedl->updated = 1;
         speedr->data[0] = 100 * mot.motorspeed_r;
         speedr->updated = 1;
-        if (time % 100 == 0)
+        if (time_ % 100 == 0)
             //    printf(" laser %f \n",laserpar[3]);
-            time++;
+            time_++;
         /* stop if keyboard is activated
          *
          */
@@ -504,8 +513,8 @@ void update_motcon(motiontype *p) {
     }
 }
 
-int fwd(double dist, double speed, int time, int detect_line, int wall_detection, int wall_end_detection) {
-    if (time == 0) {
+int fwd(double dist, double speed, int time_, int detect_line, int wall_detection, int wall_end_detection) {
+    if (time_ == 0) {
         mot.cmd = mot_move;
         mot.speedcmd = speed;
         mot.dist = dist;
@@ -524,8 +533,8 @@ int fwd(double dist, double speed, int time, int detect_line, int wall_detection
         return mot.finished;
     }
 }
-int rev(double dist, double speed, int time) {
-    if (time == 0) {
+int rev(double dist, double speed, int time_) {
+    if (time_ == 0) {
         mot.cmd = mot_rev;
         mot.speedcmd = speed;
         mot.dist = dist;
@@ -533,8 +542,8 @@ int rev(double dist, double speed, int time) {
     } else
         return mot.finished;
 }
-int turn(double angle, double speed, int time) {
-    if (time == 0) {
+int turn(double angle, double speed, int time_) {
+    if (time_ == 0) {
         mot.cmd = mot_turn;
         mot.speedcmd = speed;
         mot.angle = angle;
@@ -542,8 +551,8 @@ int turn(double angle, double speed, int time) {
     } else
         return mot.finished;
 }
-int follow_line(double dist, double speed, int time, int stop_at_cross, int gate_on_the_loose) {
-    if (time == 0) {
+int follow_line(double dist, double speed, int time_, int stop_at_cross, int gate_on_the_loose) {
+    if (time_ == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
@@ -559,8 +568,8 @@ int follow_line(double dist, double speed, int time, int stop_at_cross, int gate
         return mot.finished;
     }
 }
-int follow_line_left(double dist, double speed, int time, int stop_at_cross) {
-    if (time == 0) {
+int follow_line_left(double dist, double speed, int time_, int stop_at_cross) {
+    if (time_ == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
@@ -573,8 +582,8 @@ int follow_line_left(double dist, double speed, int time, int stop_at_cross) {
         return mot.finished;
     }
 }
-int follow_line_right(double dist, double speed, int time, int stop_at_cross) {
-    if (time == 0) {
+int follow_line_right(double dist, double speed, int time_, int stop_at_cross) {
+    if (time_ == 0) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
@@ -589,10 +598,10 @@ int follow_line_right(double dist, double speed, int time, int stop_at_cross) {
 }
 void sm_update(smtype *p) {
     if (p->substate != p->oldstate) {
-        p->time = 0;
+        p->time_ = 0;
         p->oldstate = p->substate;
     } else {
-        p->time++;
+        p->time_++;
     }
 }
 
@@ -700,7 +709,7 @@ float center_of_mass(double *intensity_array) {
 int arrayCounter = 0;
 float array[25][3 * 60 * 100];
 void sm_saveArray() {
-    array[0][arrayCounter] = mission.time;
+    array[0][arrayCounter] = mission.time_;
     array[1][arrayCounter] = mot.motorspeed_l;
     array[2][arrayCounter] = mot.motorspeed_r;
     array[3][arrayCounter] = odo.x;
@@ -751,12 +760,12 @@ int substate_box(double dist) {
         case ms_init:
            mission.substate = ms_box_fwd;
         case ms_box_fwd:
-           if (fwd(.3, 0.6, mission.time, 0, 0, 0))
+           if (fwd(.3, 0.6, mission.time_, 0, 0, 0))
                mission.substate = ms_box_measure_distance;
 
            break;
         case ms_box_measure_distance:;
-           if (mission.time < 20) {
+           if (mission.time_ < 20) {
                mission.substate = ms_box_measure_distance;
            } else {
                printf("entering ms_box_measure_distance \n");
@@ -767,44 +776,44 @@ int substate_box(double dist) {
            break;
         case ms_box_follow_line_left:
            // 7.3
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 1.8;
                printf("entering ms_box_follow_line_left \n");
            }
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.2, mission.time, 0))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line_left(dist, 0.2, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
            break;
         case ms_box_follow_line:
            // 7.3
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 3.2;
                printf("entering ms_box_follow_line \n");
            }
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time, 1, 0))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line(dist, speed, mission.time_, 1, 0))
 
                mission.substate = ms_box_push;
 
            break;
         case ms_box_push:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
                speed = 0.3;
                dist = 0.3;
                printf("entering ms_box_push \n");
            }
-           if (fwd(dist, speed, mission.time, 0, 0, 0))
+           if (fwd(dist, speed, mission.time_, 0, 0, 0))
                mission.substate = ms_box_reverse;
            break;
 
         case ms_box_reverse:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
 
@@ -812,96 +821,96 @@ int substate_box(double dist) {
                dist = -1.2;
                printf("entering ms_box_reverse \n");
            }
-           if (rev(dist, speed, mission.time))
+           if (rev(dist, speed, mission.time_))
                mission.substate = ms_box_turn;
            break;
         case ms_box_turn:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (-M_PI / 2.5 + odo.theta);
                printf("entering ms_box_turn \n");
            }
-           if (turn(-M_PI / 2.5, 0.3, mission.time))
+           if (turn(-M_PI / 2.5, 0.3, mission.time_))
                mission.substate = ms_box_forward_untill_line;
 
            break;
         case ms_box_forward_untill_line:
-           if (fwd(2, 0.2, mission.time, 1, 0, 0))
+           if (fwd(2, 0.2, mission.time_, 1, 0, 0))
                mission.substate = ms_box_fwd2;
 
            break;
         case ms_box_fwd2:
-           if (fwd(0.1, 0.2, mission.time, 0, 0, 0))
+           if (fwd(0.1, 0.2, mission.time_, 0, 0, 0))
                mission.substate = ms_box_follow_line_left2;
            break;
 
         case ms_box_follow_line_left2:
            // 7.3
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ls = odo.theta_ref;
                speed = 0.1;
                dist = 1;
                printf("entering ms_box_follow_line_left2 \n");
            }
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time, 1, 0))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line(dist, speed, mission.time_, 1, 0))
                mission.substate = ms_box_fwd3;
 
            break;
 
         case ms_box_fwd3:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_box_fwd3 \n");
-           if (fwd(0.25, 0.3, mission.time, 0, 0, 0))
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_box_turn_towards_gates;
            break;
 
         case ms_box_turn_towards_gates:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (M_PI_2 + odo.theta);
                printf("entering ms_box_turn_towards_gates \n");
            }
-           if (turn(M_PI_2, 0.3, mission.time))
+           if (turn(M_PI_2, 0.3, mission.time_))
                mission.substate = ms_box_follow_line2;
 
            break;
         case ms_box_follow_line2:
            // 7.3
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 2;
                printf("entering ms_box_follow_line2 \n");
            }
 
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time, 1, 0))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line(dist, speed, mission.time_, 1, 0))
                mission.substate = ms_box_fwd4;
 
            break;
         case ms_box_fwd4:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_box_fwd4 \n");
-           if (fwd(0.2, 0.3, mission.time, 0, 0, 0))
+           if (fwd(0.2, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_box_follow_line3;
            break;
         case ms_box_follow_line3:
            // 7.3
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 2;
                printf("entering ms_box_follow_line3 \n");
            }
 
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time, 1, 0))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line(dist, speed, mission.time_, 1, 0))
                mission.substate = ms_end;
 
            break;
         case ms_follow_line_right:
            // 7.3
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                odo.theta_ls = 0;
-           // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_right(dist, speed, mission.time, 1))
+           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
+           if (follow_line_right(dist, speed, mission.time_, 1))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -918,24 +927,24 @@ int substate_gate(double dist) {
            mission.substate = ms_gate_fwd1;
            break;
         case ms_gate_fwd1:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_gate_fwd1 \n");
-           if (follow_line(2, 0.2, mission.time, 0, 1))
+           if (follow_line(2, 0.2, mission.time_, 0, 1))
                mission.substate = ms_gate_fwd2;
            break;
         case ms_gate_fwd2:
            // Unfortunately the sensor covers a zone of 20 degrees. Therefore we need as small corection of distance.
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_gate_fwd2 \n");
-           if (follow_line(0.65, 0.2, mission.time, 0, 0))
+           if (follow_line(0.65, 0.2, mission.time_, 0, 0))
                mission.substate = ms_gate_turn;
            break;
         case ms_gate_turn:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (M_PI_2 + odo.theta);
                printf("entering ms_gate_turn \n");
            }
-           if (turn(M_PI_2, 0.3, mission.time))
+           if (turn(M_PI_2, 0.3, mission.time_))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -953,83 +962,83 @@ int substate_double_gate(double dist) {
            mission.substate = ms_double_gate_fwd1;
            break;
         case ms_double_gate_fwd1:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd1 \n");
-           if (fwd(2, 0.3, mission.time, 0, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(2, 0.3, mission.time_, 0, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_turn1;
            break;
         case ms_double_gate_turn1:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (M_PI_2 + odo.theta);
                printf("entering ms_double_gate_turn1 \n");
            }
-           if (turn(M_PI_2, 0.3, mission.time))
+           if (turn(M_PI_2, 0.3, mission.time_))
                mission.substate = ms_double_gate_fwd2;
            break;
         case ms_double_gate_fwd2:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd2 \n");
-           if (fwd(1, 0.3, mission.time, 0, 0, 1))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(1, 0.3, mission.time_, 0, 0, 1))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_fwd3;
            break;
         case ms_double_gate_fwd3:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd3 \n");
-           if (fwd(0.45, 0.2, mission.time, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.45, 0.2, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_turn2;
            break;
         case ms_double_gate_turn2:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (-M_PI_2 + odo.theta);
                printf("entering ms_double_gate_turn2 \n");
            }
-           if (turn(-M_PI_2, 0.3, mission.time))
+           if (turn(-M_PI_2, 0.3, mission.time_))
                mission.substate = ms_double_gate_fwd4;
            break;
         case ms_double_gate_fwd4:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_fwd4 \n");
-           if (fwd(0.7, 0.5, mission.time, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.7, 0.5, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_turn3;
            break;
         case ms_double_gate_turn3:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (-M_PI_2 + odo.theta);
                printf("entering ms_double_gate_turn3 \n");
            }
-           if (turn(-M_PI_2, 0.3, mission.time))
+           if (turn(-M_PI_2, 0.3, mission.time_))
                mission.substate = ms_double_gate_drive_to_line;
            break;
         case ms_double_gate_drive_to_line:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_drive_to_line \n");
-           if (fwd(2, 0.2, mission.time, 1, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(2, 0.2, mission.time_, 1, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_past_line;
            break;
         case ms_double_gate_past_line:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_past_line \n");
-           if (fwd(0.25, 0.3, mission.time, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_turn4;
            break;
         case ms_double_gate_turn4:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (M_PI_2 + odo.theta);
                printf("entering ms_double_gate_turn3 \n");
            }
-           if (turn(M_PI_2, 0.3, mission.time))
+           if (turn(M_PI_2, 0.3, mission.time_))
                mission.substate = ms_double_gate_rev;
            break;
         case ms_double_gate_rev:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_rev \n");
-           if (rev(-0.7, -0.6, mission.time))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (rev(-0.7, -0.6, mission.time_))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_follow_line;
            break;
         case ms_double_gate_follow_line:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_double_gate_follow_line \n");
-           if (follow_line(1.5, 0.3, mission.time, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(1.5, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -1047,35 +1056,35 @@ int substate_white_line(double dist) {
            mission.substate = ms_white_line_fwd1;
            break;
         case ms_white_line_fwd1:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_white_line_fwd1 \n");
-           if (fwd(0.1, 0.3, mission.time, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.1, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_follow_line1:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_white_line_follow_line1 \n");
-           if (follow_line(4.5, 0.3, mission.time, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(4.5, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_white_line_fwd2;
            break;
         case ms_white_line_fwd2:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_white_line_fwd2 \n");
-           if (fwd(0.25, 0.3, mission.time, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_white_line_turn;
            break;
         case ms_white_line_turn:
-           if (mission.time == 0) {
+           if (mission.time_ == 0) {
                odo.theta_ref = (-M_PI_2 + odo.theta);
                printf("entering ms_white_line_turn \n");
            }
-           if (turn(-M_PI_2, 0.3, mission.time))
+           if (turn(-M_PI_2, 0.3, mission.time_))
                mission.substate = ms_white_line_follow_line2;
            break;
         case ms_white_line_follow_line2:
-           if (mission.time == 0)
+           if (mission.time_ == 0)
                printf("entering ms_white_line_follow_line2 \n");
-           if (follow_line(2, 0.3, mission.time, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (follow_line(2, 0.3, mission.time_, 1, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_end;
            break;
         case ms_end:
