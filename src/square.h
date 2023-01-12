@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include "componentserver.h"
 #include "rhd.h"
 #include "xmlio.h"
@@ -89,17 +90,22 @@ void sm_saveArray();
 void calibrateLinesensor();
 void read_linesensor();
 float center_of_mass(double *intensity_array);
-int fwd(double dist, double speed, int time,int detectLine);
+int fwd(double dist, double speed, int time, int detectLine, int wall_detection, int wall_end_detection);
 int rev(double dist, double speed, int time);
 int turn(double angle, double speed, int time);
-int follow_line(double dist, double speed, int time, int follow);
+int follow_line(double dist, double speed, int time, int follow, int gate_on_the_loose);
 int follow_line_left(double dist, double speed, int time, int follow);
 int follow_line_right(double dist, double speed, int time, int follow);
 double find_laser_min();
 int crossdetection(double *array);
 int linedetection(double *array);
+int detect_gate_on_the_loose();
+int detect_wall();
+int detect_wall_end();
 int substate_box(double dist);
 int substate_gate(double dist);
+int substate_double_gate(double dist);
+int substate_white_line(double dist);
 /********************************************
  * Motion control
  */
@@ -133,8 +139,6 @@ enum {
 
 void update_motcon(motiontype *p);
 
-
-
 void segfaulthandler(int sig) {
     //    perror(NULL);
     printf("Seg-error\n");
@@ -154,11 +158,9 @@ void ctrlchandler(int sig) {
 
 typedef struct
 {
-    int state, oldstate,substate;
+    int state, oldstate, substate;
     int time;
 } smtype;
-
-
 
 void sm_update(smtype *p);
 
