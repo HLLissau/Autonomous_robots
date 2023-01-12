@@ -63,6 +63,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
+time_t start, stop;
 double speed = 0.2;
 clock_t start, end;
 double cpu_time_used;
@@ -93,12 +94,12 @@ void sm_saveArray();
 void calibrateLinesensor();
 void read_linesensor();
 float center_of_mass(double *intensity_array);
-int fwd(double dist, double speed, int time, int detectLine, int wall_detection, int wall_end_detection);
-int rev(double dist, double speed, int time);
-int turn(double angle, double speed, int time);
-int follow_line(double dist, double speed, int time, int follow, int gate_on_the_loose);
-int follow_line_left(double dist, double speed, int time, int follow);
-int follow_line_right(double dist, double speed, int time, int follow);
+int fwd(double dist, double speed, int time_, int detectLine, int wall_detection, int wall_end_detection);
+int rev(double dist, double speed, int time_);
+int turn(double angle, double speed, int time_);
+int follow_line(double dist, double speed, int time_, int follow, int gate_on_the_loose);
+int follow_line_left(double dist, double speed, int time_, int follow);
+int follow_line_right(double dist, double speed, int time_, int follow);
 double find_laser_min();
 int crossdetection(double *array);
 int linedetection(double *array);
@@ -109,6 +110,7 @@ int substate_box(double dist);
 int substate_gate(double dist);
 int substate_double_gate(double dist);
 int substate_white_line(double dist);
+int substate_garage(double dist);
 /********************************************
  * Motion control
  */
@@ -162,7 +164,7 @@ void ctrlchandler(int sig) {
 typedef struct
 {
     int state, oldstate, substate;
-    int time;
+    int time_;
 } smtype;
 
 void sm_update(smtype *p);
