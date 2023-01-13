@@ -623,7 +623,7 @@ void sm_update(smtype *p) {
             int time_used = stop-start;
             int min = time_used /60;
             int sec =(int) time_used % 60;
-            printf("State %d, substate %d, time used : %dmin, %d sec \n",mission.state, mission.substate,min,sec);
+            printf("State %d, substate %d, time used : %d min, %d sec.\n",mission.state, mission.substate,min,sec);
         #endif
     } else {
         p->time_++;
@@ -723,7 +723,7 @@ float center_of_mass(double *intensity_array) {
     float den = 0;
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
-        if (intensity_array[i] != 0) {
+        if (intensity_array[i] > BLACKLEVEL) {
            num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
            den += intensity_array[i];
         } else {  // if line is black, we exchange i with i-1
