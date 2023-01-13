@@ -4,6 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
+#define BLACKLEVEL 0.2350
 
 enum {
     ms_init,  // initial state
@@ -69,6 +70,7 @@ enum {
 int main(int argc, char **argv) {
     int arg, time_ = 0, opt, calibration;
     double dist = 0, angle = 0;
+                    start = time(NULL);
     // install sighandlers
     if (1) {
         if (signal(SIGSEGV, segfaulthandler) == SIG_ERR) {
@@ -229,7 +231,7 @@ int main(int argc, char **argv) {
         sm_update(&mission);
         switch (mission.state) {
             case ms_init:
-                start = time(NULL);
+
                 mission.state = ms_box;
                 break;
             case ms_box:
@@ -616,6 +618,13 @@ void sm_update(smtype *p) {
     if (p->substate != p->oldstate) {
         p->time_ = 0;
         p->oldstate = p->substate;
+        #if TEST 
+            stop = time(NULL);
+            int time_used = stop-start;
+            int min = time_used /60;
+            int sec =(int) time_used % 60;
+            printf("State %d, substate %d, time used : %dmin, %d sec \n",mission.state, mission.substate,min,sec);
+        #endif
     } else {
         p->time_++;
     }

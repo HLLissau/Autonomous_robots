@@ -65,7 +65,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 
 time_t start, stop;
 double speed = 0.2;
-clock_t start, end;
+//clock_t start, end;
 double cpu_time_used;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
