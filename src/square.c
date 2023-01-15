@@ -345,7 +345,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    odo.COM = center_of_mass(jarray);  // 7.3
+    odo.COM = center_of_mass2(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -447,7 +447,11 @@ void update_motcon(motiontype *p) {
             }
             break;
         case mot_follow_line:;
+            if (mission.substate==41){
+                odo.COM = center_of_mass_white(jarray);  // 7.3
+            }
             double ls = odo.COM + mot.follow_line_diff;
+            
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (K2 * odo.theta_ls);
             // printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
@@ -763,7 +767,24 @@ float center_of_mass2(double *intensity_array) {
     // printf("%f \n",res);
     return (res);
 }
+float center_of_mass_white(double *intensity_array) {
+    float num = 0;
+    float den = 0;
 
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
+        if (intensity_array[i] == 0) {
+           den += 1 - intensity_array[i];
+        } else {
+           den += intensity_array[i];
+        }
+    }
+    float res = num / den;
+    float error = 0;  // 0.001035; // An small numerical error measured through simulation
+    res = res - error;
+    // printf("%f \n",res);
+    return (res);
+}
 int arrayCounter = 0;
 float array[25][3 * 60 * 100];
 void sm_saveArray() {
