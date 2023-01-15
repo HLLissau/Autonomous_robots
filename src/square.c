@@ -345,7 +345,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    odo.COM = center_of_mass2(jarray);  // 7.3
+    odo.COM = center_of_mass(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -835,7 +835,7 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
-               dist = 1.8;
+               dist = 2;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
            if (follow_line_left(dist, 0.2, mission.time_, 0))
