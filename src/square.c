@@ -311,7 +311,7 @@ void reset_odo(odotype *p) {
 
 void update_odo(odotype *p) {
     int delta;
-
+    
     delta = p->right_enc - p->right_enc_old;
     if (delta > 0x8000)
         delta -= 0x10000;
@@ -338,6 +338,12 @@ void update_odo(odotype *p) {
     p->y += p->Delta_U * sin(p->theta);
     // printf("%f    %f     %f\n",p->x,p->y,p->theta);
     //  tilført
+    stop = time(NULL);
+    int time_used = stop - start;
+    if (time_used==1){
+    BLACKLEVEL=calculate_black_cutoff_point();
+        //printf("blacklevel: %f \n", BLACKLEVEL);
+    }
 }
 
 void update_motcon(motiontype *p) {
