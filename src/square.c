@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define BLACKLEVEL 0.28
+float BLACKLEVEL;
 
 enum {
     ms_init,  // initial state
@@ -766,6 +766,20 @@ float center_of_mass2(double *intensity_array) {
 
 int arrayCounter = 0;
 float array[25][3 * 60 * 100];
+
+float calculate_black_cutoff_point() {
+    float total = 0;
+    int count=0;
+    for (int i = 0; i < 100; i++) {
+        for (int j = 0; j < 8; j++) {
+           total = total + array[15 + j][i];
+           count++;
+        }
+    }
+    float cutoff=total/count;
+    return cutoff;
+}
+
 void sm_saveArray() {
     array[0][arrayCounter] = mission.time_;
     array[1][arrayCounter] = mot.motorspeed_l;
@@ -829,6 +843,9 @@ int substate_box(double dist) {
                double min = find_laser_min();
                printf("min laser distance: %f \n", min);
                mission.substate = ms_box_follow_line_left;
+               BLACKLEVEL=calculate_black_cutoff_point();
+               printf("blacklevel: %f \n", BLACKLEVEL);
+               
            }
            break;
         case ms_box_follow_line_left:
