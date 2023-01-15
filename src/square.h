@@ -95,6 +95,7 @@ void calibrateLinesensor();
 void read_linesensor();
 float center_of_mass(double *intensity_array);
 float center_of_mass2(double *intensity_array);
+float center_of_mass_white(double *intensity_array);
 int fwd(double dist, double speed, int time_, int detectLine, int wall_detection, int wall_end_detection);
 int rev(double dist, double speed, int time_);
 int turn(double angle, double speed, int time_);
