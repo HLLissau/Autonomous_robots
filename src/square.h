@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 0.18
-#define K2 3  //
+#define K2 3.56  //
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -94,6 +94,7 @@ void sm_saveArray();
 void calibrateLinesensor();
 void read_linesensor();
 float center_of_mass(double *intensity_array);
+float center_of_mass2(double *intensity_array);
 int fwd(double dist, double speed, int time_, int detectLine, int wall_detection, int wall_end_detection);
 int rev(double dist, double speed, int time_);
 int turn(double angle, double speed, int time_);

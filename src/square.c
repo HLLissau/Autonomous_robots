@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define BLACKLEVEL 0.2350
+#define BLACKLEVEL 0.28
 
 enum {
     ms_init,  // initial state
@@ -343,7 +343,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    odo.COM = center_of_mass(jarray);  // 7.3
+    odo.COM = center_of_mass2(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -591,7 +591,7 @@ int follow_line_left(double dist, double speed, int time_, int stop_at_cross) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = LINESENSORDIST / 10;
+        mot.follow_line_diff = LINESENSORDIST / 5;
         return 0;
     } else {
         if (stop_at_cross && !mot.finished) {
@@ -605,7 +605,7 @@ int follow_line_right(double dist, double speed, int time_, int stop_at_cross) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = -LINESENSORDIST / 10;
+        mot.follow_line_diff = -LINESENSORDIST / 5;
         return 0;
     } else {
         if (stop_at_cross && !mot.finished) {
@@ -639,7 +639,11 @@ void read_linesensor() {
 void calibrateLinesensor() {
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         jarray[i] = (line_array[i] / 255);  // setting higher mass for black
+        #if TEST
+            //printf("%i: %f.   ",i,jarray[i]);
+        #endif
     }
+    //printf("\n");
 }
 
 float minIntensity(double *intensity_array) {
@@ -734,6 +738,24 @@ float center_of_mass(double *intensity_array) {
     float res = num / den;
     float error = 0;  // 0.001035; // An small numerical error measured through simulation
     res = res - error;
+    printf("%f \n",res);
+    
+    return (res);
+}
+
+float center_of_mass2(double *intensity_array) {
+    float num = 0;
+    float den = 0;
+
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
+           num += ((i - 3.5) * (1-intensity_array[i]) * LINESENSORDIST);
+           den += intensity_array[i];
+        
+    }
+    float res = num / den;
+    float error = 0;  // 0.001035; // An small numerical error measured through simulation
+    res = res - error;
+    printf("%f \n",res);
     return (res);
 }
 
@@ -791,7 +813,7 @@ int substate_box(double dist) {
         case ms_init:
            mission.substate = ms_box_fwd;
         case ms_box_fwd:
-           if (fwd(.3, 0.6, mission.time_, 0, 0, 0))
+           if (fwd(.3, 0.4, mission.time_, 0, 0, 0))
                mission.substate = ms_box_measure_distance;
 
            break;
@@ -833,7 +855,7 @@ int substate_box(double dist) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
                speed = 0.3;
-               dist = 0.3;
+               dist = 0.2;
            }
            if (fwd(dist, speed, mission.time_, 0, 0, 0))
                mission.substate = ms_box_reverse;
@@ -944,7 +966,7 @@ int substate_gate(double dist) {
            mission.substate = ms_gate_fwd1;
            break;
         case ms_gate_fwd1:
-           if (follow_line(2, 0.2, mission.time_, 0, 1))
+           if (follow_line(2, 0.05, mission.time_, 0, 1))
                mission.substate = ms_gate_fwd2;
            break;
         case ms_gate_fwd2:
