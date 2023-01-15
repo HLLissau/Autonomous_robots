@@ -9,8 +9,8 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "componentserver.h"
 #include "rhd.h"
@@ -58,14 +58,14 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.18
-#define K2 3.56  //
+#define K 0.008
+#define K2 2.96  //
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
 time_t start, stop;
 double speed = 0.2;
-//clock_t start, end;
+// clock_t start, end;
 double cpu_time_used;
 double line_array[LINE_SENSOR_DATA_LENGTH];  // variable som line sensor data skal lægges ind i 7.1
 double jarray[LINE_SENSOR_DATA_LENGTH];      // normalisered værdi af line sensor.
@@ -112,6 +112,7 @@ int substate_gate(double dist);
 int substate_double_gate(double dist);
 int substate_white_line(double dist);
 int substate_garage(double dist);
+float center_of_mass_white(double *intensity_array);
 float calculate_black_cutoff_point();
 /********************************************
  * Motion control
