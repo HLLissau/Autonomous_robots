@@ -23,14 +23,16 @@ enum {
     ms_box_turn,
     ms_box_forward_untill_line,
     ms_box_fwd2,
+    ms_box_turn2,
     ms_box_follow_line_left2,
     ms_box_fwd3,
     ms_box_turn_towards_gates,
     ms_box_follow_line2,
     ms_box_fwd4,
     ms_box_follow_line3,
-    ms_follow_line_right,
+    ms_box_follow_line4,
     ms_gate_fwd1,
+    ms_gate_follow_line1,
     ms_gate_fwd2,
     ms_gate_turn,
     ms_double_gate_fwd1,
@@ -70,7 +72,7 @@ enum {
 int main(int argc, char **argv) {
     int arg, time_ = 0, opt, calibration;
     double dist = 0, angle = 0;
-                    start = time(NULL);
+    start = time(NULL);
     // install sighandlers
     if (1) {
         if (signal(SIGSEGV, segfaulthandler) == SIG_ERR) {
@@ -618,13 +620,13 @@ void sm_update(smtype *p) {
     if (p->substate != p->oldstate) {
         p->time_ = 0;
         p->oldstate = p->substate;
-        #if TEST 
-            stop = time(NULL);
-            int time_used = stop-start;
-            int min = time_used /60;
-            int sec =(int) time_used % 60;
-            printf("State %d, substate %d, time used : %d min, %d sec.\n",mission.state, mission.substate,min,sec);
-        #endif
+#if TEST
+        stop = time(NULL);
+        int time_used = stop - start;
+        int min = time_used / 60;
+        int sec = (int)time_used % 60;
+        printf("State %d, substate %d, time used : %d min, %d sec.\n", mission.state, mission.substate, min, sec);
+#endif
     } else {
         p->time_++;
     }
@@ -639,11 +641,11 @@ void read_linesensor() {
 void calibrateLinesensor() {
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         jarray[i] = (line_array[i] / 255);  // setting higher mass for black
-        #if TEST
-            //printf("%i: %f.   ",i,jarray[i]);
-        #endif
+#if TEST
+                                            // printf("%i: %f.   ",i,jarray[i]);
+#endif
     }
-    //printf("\n");
+    // printf("\n");
 }
 
 float minIntensity(double *intensity_array) {
@@ -738,8 +740,8 @@ float center_of_mass(double *intensity_array) {
     float res = num / den;
     float error = 0;  // 0.001035; // An small numerical error measured through simulation
     res = res - error;
-    printf("%f \n",res);
-    
+    // printf("%f \n",res);
+
     return (res);
 }
 
@@ -748,14 +750,17 @@ float center_of_mass2(double *intensity_array) {
     float den = 0;
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
-           num += ((i - 3.5) * (1-intensity_array[i]) * LINESENSORDIST);
+        num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
+        if (intensity_array[i] == 0) {
+           den += 1 - intensity_array[i];
+        } else {
            den += intensity_array[i];
-        
+        }
     }
     float res = num / den;
     float error = 0;  // 0.001035; // An small numerical error measured through simulation
     res = res - error;
-    printf("%f \n",res);
+    // printf("%f \n",res);
     return (res);
 }
 
@@ -852,6 +857,7 @@ int substate_box(double dist) {
            break;
         case ms_box_push:
            if (mission.time_ == 0) {
+               printf("ref: %f, theta:%f , ls: %f", odo.theta_ref, odo.theta, odo.theta_ls);
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
                speed = 0.3;
@@ -881,20 +887,28 @@ int substate_box(double dist) {
 
            break;
         case ms_box_forward_untill_line:
-           if (fwd(2, 0.2, mission.time_, 1, 0, 0))
+           if (fwd(2, 0.3, mission.time_, 1, 0, 0))
                mission.substate = ms_box_fwd2;
 
            break;
         case ms_box_fwd2:
-           if (fwd(0.1, 0.2, mission.time_, 0, 0, 0))
+           if (fwd(0.2, 0.1, mission.time_, 0, 0, 0))
+               mission.substate = ms_box_turn2;
+           break;
+        case ms_box_turn2:
+           if (mission.time_ == 0) {
+               odo.theta_ref = (M_PI / 2.5 + odo.theta);
+           }
+           if (turn(M_PI / 2.5, 0.3, mission.time_))
                mission.substate = ms_box_follow_line_left2;
+
            break;
 
         case ms_box_follow_line_left2:
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = odo.theta_ref;
-               speed = 0.1;
+               speed = 0.3;
                dist = 1;
            }
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -924,7 +938,7 @@ int substate_box(double dist) {
            }
 
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time_, 1, 0))
+           if (follow_line(dist, 0.3, mission.time_, 1, 0))
                mission.substate = ms_box_fwd4;
 
            break;
@@ -937,20 +951,13 @@ int substate_box(double dist) {
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 2;
+               speed = 0.3;
            }
 
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
            if (follow_line(dist, speed, mission.time_, 1, 0))
                mission.substate = ms_end;
 
-           break;
-        case ms_follow_line_right:
-           // 7.3
-           if (mission.time_ == 0)
-               odo.theta_ls = 0;
-           // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_right(dist, speed, mission.time_, 1))
-               mission.substate = ms_end;
            break;
         case ms_end:
            finished = 1;
@@ -966,6 +973,10 @@ int substate_gate(double dist) {
            mission.substate = ms_gate_fwd1;
            break;
         case ms_gate_fwd1:
+           if (fwd(0.2, 0.3, mission.time_, 0, 0, 0))
+               mission.substate = ms_gate_follow_line1;
+           break;
+        case ms_gate_follow_line1:
            if (follow_line(2, 0.05, mission.time_, 0, 1))
                mission.substate = ms_gate_fwd2;
            break;
