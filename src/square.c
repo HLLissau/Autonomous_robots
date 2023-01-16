@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define COMPENSATE 1
+#define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
 float BLACKLEVEL;
 
 enum {
