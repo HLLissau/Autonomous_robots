@@ -113,6 +113,7 @@ int substate_double_gate(double dist);
 int substate_white_line(double dist);
 int substate_garage(double dist);
 float center_of_mass_white(double *intensity_array);
+float center_of_mass_left(double *intensity_array);
 float calculate_black_cutoff_point();
 /********************************************
  * Motion control
@@ -134,7 +135,7 @@ typedef struct
     // internal variables
     double startpos;
     // follow line offset to follow left or right
-    double follow_line_diff;
+    int follow_line_diff;
 } motiontype;
 
 enum {

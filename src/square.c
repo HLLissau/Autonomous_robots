@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_gate;
+    mission.state = ms_init;
     mission.substate = ms_init;
     mission.oldstate = -1;
     while (running) {
@@ -457,7 +457,10 @@ void update_motcon(motiontype *p) {
             if (mission.substate == 42) {
                 odo.COM = center_of_mass_white(jarray);  // 7.3
             }
-            double ls = odo.COM + mot.follow_line_diff;
+            if (mot.follow_line_diff == 1) {
+                odo.COM = center_of_mass_left(jarray);
+            }
+            double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (K2 * odo.theta_ls);
             // printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
@@ -603,7 +606,7 @@ int follow_line_left(double dist, double speed, int time_, int stop_at_cross) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = LINESENSORDIST / 3;
+        mot.follow_line_diff = 1;
         return 0;
     } else {
         if (stop_at_cross && !mot.finished) {
@@ -617,7 +620,7 @@ int follow_line_right(double dist, double speed, int time_, int stop_at_cross) {
         mot.cmd = mot_follow_line;
         mot.speedcmd = speed;
         mot.dist = dist;
-        mot.follow_line_diff = -LINESENSORDIST / 5;
+        mot.follow_line_diff = 2;
         return 0;
     } else {
         if (stop_at_cross && !mot.finished) {
@@ -749,6 +752,38 @@ float center_of_mass(double *intensity_array) {
         } else {  // if line is black, we exchange i with i-1
            num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
            den += (1 - intensity_array[i]);
+        }
+    }
+    float res = num / den;
+    float error = 0;  // 0.001035; // An small numerical error measured through simulation
+    res = res - error;
+    // printf("%f \n",res);
+
+    return (res);
+}
+
+float center_of_mass_left(double *intensity_array) {
+    float num = 0;
+    float den = 0;
+    float max_intensity = intensity_array[0];
+    int black_detected = 0;
+
+    for (int i = 1; i < LINE_SENSOR_DATA_LENGTH; i++) {
+        if (intensity_array[i] > max_intensity)
+           max_intensity = intensity_array[i];
+    }
+
+    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i--) {
+        if (intensity_array[i] > BLACKLEVEL) {
+           num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
+           den += intensity_array[i];
+        } else if (black_detected == 1) {
+           num += ((i - 3.5) * max_intensity * LINESENSORDIST);
+           den += max_intensity;
+        } else {  // if line is black, we exchange i with i-1
+           num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
+           den += (1 - intensity_array[i]);
+           black_detected = 1;
         }
     }
     float res = num / den;
