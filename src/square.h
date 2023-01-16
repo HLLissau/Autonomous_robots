@@ -58,8 +58,8 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.008
-#define K2 2.96  //
+#define K 0.007
+#define K2 2.5
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -100,7 +100,7 @@ int rev(double dist, double speed, int time_);
 int turn(double angle, double speed, int time_);
 int follow_line(double dist, double speed, int time_, int follow, int gate_on_the_loose);
 int follow_line_left(double dist, double speed, int time_, int follow);
-int follow_line_right(double dist, double speed, int time_, int follow);
+int follow_line_white(double dist, double speed, int time_, int follow);
 double find_laser_min();
 int crossdetection(double *array);
 int linedetection(double *array);
@@ -113,6 +113,7 @@ int substate_double_gate(double dist);
 int substate_white_line(double dist);
 int substate_garage(double dist);
 float center_of_mass_white(double *intensity_array);
+float center_of_mass_left(double *intensity_array);
 float calculate_black_cutoff_point();
 /********************************************
  * Motion control
@@ -134,7 +135,7 @@ typedef struct
     // internal variables
     double startpos;
     // follow line offset to follow left or right
-    double follow_line_diff;
+    int follow_line_diff;
 } motiontype;
 
 enum {
