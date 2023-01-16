@@ -4,6 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
+#define COMPENSATE 0
 float BLACKLEVEL;
 
 enum {
@@ -208,7 +209,7 @@ int main(int argc, char **argv) {
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_init;
+    mission.state = ms_white_line;
     mission.substate = ms_init;
     mission.oldstate = -1;
     while (running) {
@@ -347,6 +348,13 @@ void update_odo(odotype *p) {
     }
 }
 
+double turn_err = 0.0;
+double white_err = 1.0;
+#if CORRECTION
+turn_err = 0.14;
+white_err = 10.0;
+#endif
+
 void update_motcon(motiontype *p) {
     sm_saveArray();         /*ADDED*/
     read_linesensor();      // added 7.2
@@ -455,14 +463,15 @@ void update_motcon(motiontype *p) {
             break;
         case mot_follow_line:;
             if (mission.substate == 42) {
-                odo.COM = center_of_mass_white(jarray);  // 7.3
+                odo.COM = center_of_mass_white(jarray) * white_err;  // 7.3
             }
             if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
             }
+            double k = K2 + mot.speedcmd * 10;
             double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
-            odo.delta_v = (K2 * odo.theta_ls);
+            odo.delta_v = (k * odo.theta_ls);
             // printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
             if (odo.delta_v < 0) {
                 p->motorspeed_l = p->motorspeed_l;
@@ -773,7 +782,7 @@ float center_of_mass_left(double *intensity_array) {
            max_intensity = intensity_array[i];
     }
 
-    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i--) {
+    for (int i = 7; i > -1; i--) {
         if (intensity_array[i] > BLACKLEVEL) {
            num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
            den += intensity_array[i];
@@ -788,8 +797,8 @@ float center_of_mass_left(double *intensity_array) {
     }
     float res = num / den;
     float error = 0;  // 0.001035; // An small numerical error measured through simulation
-    res = res - error;
-    // printf("%f \n",res);
+    res = res + error;
+    // printf("%f \n", res);
 
     return (res);
 }
@@ -800,34 +809,15 @@ float center_of_mass_white(double *intensity_array) {
 
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
-        if (intensity_array[i] == 0) {
+        if (intensity_array[i] > BLACKLEVEL) {
            den += 1 - intensity_array[i];
         } else {
-           den += intensity_array[i];
+           return (0);
         }
     }
     float res = num / den;
     float error = 0.001;  // 0.001035; // An small numerical error measured through simulation
     res = res - error;
-    return (res * 10);
-}
-
-float center_of_mass2(double *intensity_array) {
-    float num = 0;
-    float den = 0;
-
-    for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
-        num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
-        if (intensity_array[i] == 0) {
-           den += 1 - intensity_array[i];
-        } else {
-           den += intensity_array[i];
-        }
-    }
-    float res = num / den;
-    float error = 0;  // 0.001035; // An small numerical error measured through simulation
-    res = res - error;
-    // printf("%f \n",res);
     return (res);
 }
 
@@ -921,7 +911,7 @@ int substate_box(double dist) {
                dist = 2;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.1, mission.time_, 0))
+           if (follow_line_left(dist, 0.2, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -933,7 +923,7 @@ int substate_box(double dist) {
                dist = 3.2;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, speed, mission.time_, 1, 0))
+           if (follow_line(dist, 0.2, mission.time_, 1, 0))
 
                mission.substate = ms_box_push;
 
@@ -944,7 +934,7 @@ int substate_box(double dist) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
                speed = 0.3;
-               dist = 0.15;
+               dist = 0.10;
            }
            if (fwd(dist, speed, mission.time_, 0, 0, 0))
                mission.substate = ms_box_reverse;
@@ -956,7 +946,7 @@ int substate_box(double dist) {
                odo.theta_ls = 0;
 
                speed = -0.6;
-               dist = -1.2;
+               dist = -1;
            }
            if (rev(dist, speed, mission.time_))
                mission.substate = ms_box_turn;
@@ -975,14 +965,14 @@ int substate_box(double dist) {
 
            break;
         case ms_box_fwd2:
-           if (fwd(0.2, 0.1, mission.time_, 0, 0, 0))
+           if (fwd(0.25, 0.2, mission.time_, 0, 0, 0))
                mission.substate = ms_box_turn2;
            break;
         case ms_box_turn2:
            if (mission.time_ == 0) {
-               odo.theta_ref = (M_PI / 2.5 + odo.theta);
+               odo.theta_ref = (M_PI_2 - 0.45 + odo.theta);
            }
-           if (turn(M_PI / 2.5, 0.3, mission.time_))
+           if (turn(M_PI_2 - 0.45, 0.3, mission.time_))
                mission.substate = ms_box_follow_line_left2;
 
            break;
@@ -991,7 +981,7 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = odo.theta_ref;
-               speed = 0.3;
+               speed = 0.1;
                dist = 1;
            }
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -1085,6 +1075,7 @@ int substate_gate(double dist) {
 
 int substate_double_gate(double dist) {
     int finished = 0;
+
     switch (mission.substate) {
         case ms_init:
            mission.substate = ms_double_gate_fwd1;
@@ -1110,9 +1101,9 @@ int substate_double_gate(double dist) {
            break;
         case ms_double_gate_turn2:
            if (mission.time_ == 0) {
-               odo.theta_ref = (-M_PI_2 + 0.12 + odo.theta);
+               odo.theta_ref = (-M_PI_2 + turn_err + odo.theta);
            }
-           if (turn(-M_PI_2 + 0.12, 0.2, mission.time_))
+           if (turn(-M_PI_2 + turn_err, 0.2, mission.time_))
                mission.substate = ms_double_gate_fwd4;
            break;
         case ms_double_gate_fwd4:
@@ -1121,9 +1112,9 @@ int substate_double_gate(double dist) {
            break;
         case ms_double_gate_turn3:
            if (mission.time_ == 0) {
-               odo.theta_ref = (-M_PI_2 + 0.16 + odo.theta);
+               odo.theta_ref = (-M_PI_2 + turn_err + odo.theta);
            }
-           if (turn(-M_PI_2 + 0.16, 0.2, mission.time_))
+           if (turn(-M_PI_2 + turn_err, 0.2, mission.time_))
                mission.substate = ms_double_gate_drive_to_line;
            break;
         case ms_double_gate_drive_to_line:
@@ -1136,9 +1127,9 @@ int substate_double_gate(double dist) {
            break;
         case ms_double_gate_turn4:
            if (mission.time_ == 0) {
-               odo.theta_ref = (M_PI_2 - 0.12 + odo.theta);
+               odo.theta_ref = (M_PI_2 - turn_err + odo.theta);
            }
-           if (turn(M_PI_2 - 0.12, 0.3, mission.time_))
+           if (turn(M_PI_2 - turn_err, 0.3, mission.time_))
                mission.substate = ms_double_gate_rev;
            break;
         case ms_double_gate_rev:
@@ -1164,7 +1155,7 @@ int substate_white_line(double dist) {
            mission.substate = ms_white_line_fwd1;
            break;
         case ms_white_line_fwd1:
-           if (fwd(0.40, 0.3, mission.time_, 0, 0, 0))
+           if (fwd(0.60 - turn_err, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_turn0:
@@ -1175,11 +1166,11 @@ int substate_white_line(double dist) {
                mission.substate = ms_white_line_follow_line2;
            break;
         case ms_white_line_follow_line1:
-           if (follow_line(4.5, 0.1, mission.time_, 1, 0))
+           if (follow_line(4.5, 0.3, mission.time_, 1, 0))
                mission.substate = ms_white_line_fwd2;
            break;
         case ms_white_line_fwd2:
-           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
+           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO
                mission.substate = ms_white_line_turn;
            break;
         case ms_white_line_turn:
