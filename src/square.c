@@ -5,6 +5,11 @@
 #include "square.h"
 #define TEST 1
 #define COMPENSATE 1  // Set to 0 if simulate has to work, else 1
+#define BACTUAL 0.267012
+#define ED 0.975766
+
+#define STARTSTATE ms_init
+#define STARTSUBSTATE ms_init
 float BLACKLEVEL;
 
 enum {
@@ -202,16 +207,20 @@ int main(int argc, char **argv) {
     rhdSync();
 
     odo.w = 0.256;
-    odo.cr = DELTA_M * 0.975766;
+    odo.cr = DELTA_M;
     odo.cl = DELTA_M;
+    if (calibration) {
+        odo.w = BACTUAL;
+        odo.cr = DELTA_M * ED;
+    }
     odo.left_enc = lenc->data[0];
     odo.right_enc = renc->data[0];
     reset_odo(&odo);
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_init;
-    mission.substate = ms_init;
+    mission.state = STARTSTATE;
+    mission.substate = STARTSUBSTATE;  // ms_box_measure_distance
     mission.oldstate = -1;
     while (running) {
         if (lmssrv.config && lmssrv.status && lmssrv.connected) {
