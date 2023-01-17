@@ -366,7 +366,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    //odo.COM = center_of_mass(jarray);  // 7.3
+    // odo.COM = center_of_mass(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -1075,7 +1075,7 @@ int substate_gate(double dist) {
            mission.substate = ms_gate_fwd1;
            break;
         case ms_gate_fwd1:
-           if (fwd(2, 0.3, mission.time_, 0, 0, 0))
+           if (fwd(0.2, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_gate_follow_line1;
            break;
         case ms_gate_follow_line1:
