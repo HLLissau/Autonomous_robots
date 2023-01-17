@@ -5,6 +5,9 @@
 #include "square.h"
 #define TEST 1
 #define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
+#define BACTUAL 0.267012
+#define ED 0.975766
+
 float BLACKLEVEL;
 
 enum {
@@ -202,8 +205,13 @@ int main(int argc, char **argv) {
     rhdSync();
 
     odo.w = 0.256;
-    odo.cr = DELTA_M * 0.975766;
+    odo.cr = DELTA_M;
     odo.cl = DELTA_M;
+    if (calibration){
+        
+    odo.w = BACTUAL;
+    odo.cr = DELTA_M*ED;
+    }
     odo.left_enc = lenc->data[0];
     odo.right_enc = renc->data[0];
     reset_odo(&odo);
