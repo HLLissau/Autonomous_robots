@@ -476,17 +476,17 @@ void update_motcon(motiontype *p) {
             } else {
                 odo.COM = center_of_mass(jarray);
             }
-            double k = K2 + mot.speedcmd * 2;
+            double k = K2 + mot.speedcmd * 20;
             double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (k * odo.theta_ls);
             // printf("Angle: %.8f \ndel_v: %.8f \nCOM: %.8f\nLS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
             if (odo.delta_v < 0) {
-                p->motorspeed_l = p->motorspeed_l;
-                p->motorspeed_r = p->motorspeed_l - odo.delta_v;
+                p->motorspeed_l= p->motorspeed_l;
+                p->motorspeed_r = (p->motorspeed_r +(p->motorspeed_l - odo.delta_v))/2;
             } else {
                 p->motorspeed_r = p->motorspeed_r;
-                p->motorspeed_l = p->motorspeed_r + odo.delta_v;
+                p->motorspeed_l = (p->motorspeed_l+(p->motorspeed_r + odo.delta_v))/2;
             }
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
             // if (p->motorspeed_r<0) p->motorspeed_r=0;
@@ -925,7 +925,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.1, mission.time_, 0))
+           if (follow_line_left(dist, 0.4, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
