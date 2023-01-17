@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
+#define COMPENSATE 1  // Set to 0 if simulate has to work, else 1
 float BLACKLEVEL;
 
 enum {
@@ -441,9 +441,10 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-
+             odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
-
+            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
@@ -694,7 +695,7 @@ int crossdetection(double *intensity_array) {
            amount++;
     }
     if (amount > 6) {
-        printf("Detected cross");
+        printf("Detected cross \n");
         return 1;
     } else
         return 0;
@@ -952,7 +953,7 @@ int substate_box(double dist) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
 
-               speed = -0.5;
+               speed = -0.4;
                dist = -0.7;
            }
            if (rev(dist, speed, mission.time_))
