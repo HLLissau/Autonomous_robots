@@ -8,6 +8,8 @@
 #define BACTUAL 0.267012
 #define ED 0.975766
 
+#define STARTSTATE ms_init
+#define STARTSUBSTATE ms_init
 float BLACKLEVEL;
 
 enum {
@@ -218,8 +220,8 @@ int main(int argc, char **argv) {
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_gate;
-    mission.substate = ms_init;  // ms_box_measure_distance
+    mission.state = STARTSTATE;
+    mission.substate = STARTSUBSTATE;  // ms_box_measure_distance
     mission.oldstate = -1;
     while (running) {
         if (lmssrv.config && lmssrv.status && lmssrv.connected) {
