@@ -366,7 +366,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    odo.COM = center_of_mass(jarray);  // 7.3
+    //odo.COM = center_of_mass(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -477,9 +477,10 @@ void update_motcon(motiontype *p) {
         case mot_follow_line:;
             if (mot.follow_line_diff == 2) {
                 odo.COM = center_of_mass_white(jarray) * white_err;  // 7.3
-            }
-            if (mot.follow_line_diff == 1) {
+            } else if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
+            } else {
+                odo.COM = center_of_mass(jarray);
             }
             double k = K2 + mot.speedcmd * 2;
             double ls = odo.COM;
