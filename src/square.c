@@ -8,7 +8,7 @@
 #define BACTUAL 0.267012
 #define ED 0.975766
 
-#define STARTSTATE ms_init
+#define STARTSTATE ms_garage
 #define STARTSUBSTATE ms_init
 float BLACKLEVEL;
 
@@ -344,7 +344,7 @@ void update_odo(odotype *p) {
 
     // tilført
     p->Delta_U = (p->delta_Ur + p->delta_Ul) / 2;
-    p->Delta_theta = (p->delta_Ur - p->delta_Ul) / WHEEL_SEPARATION;
+    p->Delta_theta = (p->delta_Ur - p->delta_Ul) / odo.w;
     p->theta += p->Delta_theta;
     p->x += p->Delta_U * cos(p->theta);
     p->y += p->Delta_U * sin(p->theta);
@@ -1290,7 +1290,7 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd5;
            break;
         case ms_garage_fwd5:
-           if (fwd(0.15, 0.5, mission.time_, 0, 0, 0))
+           if (fwd(0.18, 0.5, mission.time_, 0, 0, 0))
                mission.substate = ms_garage_turn4;
            break;
         case ms_garage_turn4:
