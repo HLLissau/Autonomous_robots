@@ -104,7 +104,7 @@ int follow_line_white(double dist, double speed, int time_, int follow);
 double find_laser_min();
 int crossdetection(double *array);
 int linedetection(double *array);
-int detect_gate_on_the_loose();
+int detect_gate_on_the_loose(int i);
 int detect_wall();
 int detect_wall_end();
 int substate_box(double dist);
