@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
+#define COMPENSATE 1  // Set to 0 if simulate has to work, else 1
 float BLACKLEVEL;
 
 enum {
@@ -16,7 +16,6 @@ enum {
     ms_white_line,
     ms_garage,
     ms_box_measure_distance,
-    ms_box_fwd,
     ms_box_follow_line_left,
     ms_box_follow_line,
     ms_box_push,
@@ -52,6 +51,7 @@ enum {
     ms_white_line_fwd1,
     ms_white_line_turn0,
     ms_white_line_follow_line1,
+    ms_white_line_pause,
     ms_white_line_fwd2,
     ms_white_line_turn,
     ms_white_line_follow_line2,
@@ -210,8 +210,8 @@ int main(int argc, char **argv) {
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_gate;
-    mission.substate = ms_init;  // ms_box_measure_distance
+    mission.state = ms_init;
+    mission.substate = ms_init;
     mission.oldstate = -1;
     while (running) {
         if (lmssrv.config && lmssrv.status && lmssrv.connected) {
@@ -351,9 +351,9 @@ void update_odo(odotype *p) {
 
 #if COMPENSATE
 double turn_err = 0.0;
-double turn_err2 = 0.12;
-double white_err = 8.0;
-double distance_to_white = 0.05;
+double turn_err2 = 0.0;  // 0.12
+double white_err = 7.0;
+double distance_to_white = +0.08;
 #else
 double turn_err = 0.0;
 double turn_err2 = 0.0;
@@ -366,7 +366,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    // odo.COM = center_of_mass(jarray);  // 7.3
+    odo.COM = center_of_mass(jarray);  // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -410,13 +410,13 @@ void update_motcon(motiontype *p) {
         case mot_move:
             // 7.1 we change the motors to stay on course
             odo.delta_v = (K * (odo.theta_ref - odo.theta));
-            printf("Turn error = %f\n", (odo.theta_ref - odo.theta));
+            // printf("Turn error = %f\n", (odo.theta_ref - odo.theta));
             if (odo.delta_v < 0) {
                 p->motorspeed_l = p->motorspeed_l;
-                p->motorspeed_r = p->motorspeed_l - odo.delta_v;
+                p->motorspeed_r = p->motorspeed_l + odo.delta_v;
             } else {
                 p->motorspeed_r = p->motorspeed_r;
-                p->motorspeed_l = p->motorspeed_r + odo.delta_v;
+                p->motorspeed_l = p->motorspeed_r - odo.delta_v;
             }
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
             // if (p->motorspeed_r<0) p->motorspeed_r=0;
@@ -477,10 +477,9 @@ void update_motcon(motiontype *p) {
         case mot_follow_line:;
             if (mot.follow_line_diff == 2) {
                 odo.COM = center_of_mass_white(jarray) * white_err;  // 7.3
-            } else if (mot.follow_line_diff == 1) {
+            }
+            if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
-            } else {
-                odo.COM = center_of_mass(jarray);
             }
             double k = K2 + mot.speedcmd * 2;
             double ls = odo.COM;
@@ -578,7 +577,7 @@ int fwd(double dist, double speed, int time_, int detect_line, int wall_detectio
         return 0;
     } else {
         if (detect_line && !mot.finished) {
-           mot.finished = linedetection(jarray);
+           mot.finished = linedetection(jarray, detect_line);
         }
         if (wall_detection && !mot.finished) {
            mot.finished = detect_wall();
@@ -656,6 +655,11 @@ int follow_line_white(double dist, double speed, int time_, int stop_at_cross) {
         if (stop_at_cross && !mot.finished) {
            mot.finished = crossdetection(jarray);
         }
+        if (mot.finished) {
+           odo.theta_ref = odo.theta;
+           // mot.motorspeed_l = 0;
+           // mot.motorspeed_r = 0;
+        }
         return mot.finished;
     }
 }
@@ -708,19 +712,18 @@ int crossdetection(double *intensity_array) {
            amount++;
     }
     if (amount > 6) {
-        printf("Detected cross \n");
         return 1;
     } else
         return 0;
 }
 // finds a line while driving.
-int linedetection(double *intensity_array) {
+int linedetection(double *intensity_array, int threshold) {
     int amount = 0;
     for (int i = 0; i < LINE_SENSOR_DATA_LENGTH; i++) {
         if (intensity_array[i] < BLACKLEVEL)
            amount++;
     }
-    return (amount > 1);
+    return (amount > threshold);
 }
 
 double find_laser_min() {
@@ -837,7 +840,7 @@ float center_of_mass_white(double *intensity_array) {
         if (intensity_array[i] > BLACKLEVEL) {
            den += intensity_array[i];
         } else {
-           return (0.0);
+           den += BLACKLEVEL;
         }
     }
     float res = num / den;
@@ -913,11 +916,6 @@ int substate_box(double dist) {
     switch (mission.substate) {
         case ms_init:
            mission.substate = ms_box_measure_distance;
-        case ms_box_fwd:
-           if (follow_line_left(.2, 0.2, mission.time_, 0))
-               mission.substate = ms_box_measure_distance;
-
-           break;
         case ms_box_measure_distance:;
            if (mission.time_ < 100) {
                mission.substate = ms_box_measure_distance;
@@ -1121,11 +1119,11 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_fwd2;
            break;
         case ms_double_gate_fwd2:
-           if (fwd(1, 0.3, mission.time_, 0, 0, 1))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(1.5, 0.3, mission.time_, 0, 0, 1))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_fwd3;
            break;
         case ms_double_gate_fwd3:
-           if (fwd(0.48, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
+           if (fwd(0.42, 0.3, mission.time_, 0, 0, 0))  // TODO: Bruge fejlen i den aflæste LS hvis den gør en forskel
                mission.substate = ms_double_gate_turn2;
            break;
         case ms_double_gate_turn2:
@@ -1147,8 +1145,10 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_drive_to_line;
            break;
         case ms_double_gate_drive_to_line:
-           if (fwd(2, 0.3, mission.time_, 1, 0, 0))
+           if (fwd(2.5, 0.3, mission.time_, 3, 0, 0)) {
+               odo.theta_ref = odo.theta;
                mission.substate = ms_double_gate_past_line;
+           }
            break;
         case ms_double_gate_past_line:
            if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
@@ -1191,19 +1191,28 @@ int substate_white_line(double dist) {
            mission.substate = ms_white_line_fwd1;
            break;
         case ms_white_line_fwd1:
-           if (fwd(0.60 - distance_to_white, 0.15, mission.time_, 0, 0, 0))
+           if (fwd(0.60 + distance_to_white, 0.15, mission.time_, 0, 0, 0))
                mission.substate = ms_white_line_turn0;
            break;
         case ms_white_line_turn0:
            if (mission.time_ == 0) {
-               odo.theta_ref = (M_PI_4 + odo.theta);
+               odo.theta_ref = (M_PI_4 - 0.08 + odo.theta);
            }
-           if (turn(M_PI_4, 0.2, mission.time_))
+           if (turn(M_PI_4 - 0.08, 0.2, mission.time_))
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_follow_line1:
-           if (follow_line_white(4.5, 0.2, mission.time_, 1))
+           if (follow_line_white(4.5, 0.3, mission.time_, 1))
                mission.substate = ms_white_line_fwd2;
+           break;
+        case ms_white_line_pause:
+           if (mission.time_ > 1000)
+               mission.substate = ms_white_line_fwd2;
+           else {
+               mot.motorspeed_l = 0;
+               mot.motorspeed_r = 0;
+           }
+
            break;
         case ms_white_line_fwd2:
            if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))  // TODO
@@ -1235,7 +1244,7 @@ int substate_garage(double dist) {
            mission.substate = ms_garage_fwd1;
            break;
         case ms_garage_fwd1:
-           if (fwd(0.5, 0.3, mission.time_, 0, 1, 0))
+           if (fwd(0.5, 0.15, mission.time_, 0, 1, 0))
                mission.substate = ms_garage_turn1;
            break;
         case ms_garage_turn1:
@@ -1272,7 +1281,7 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd5;
            break;
         case ms_garage_fwd5:
-           if (fwd(0.14, 0.5, mission.time_, 0, 0, 0))
+           if (fwd(0.15, 0.5, mission.time_, 0, 0, 0))
                mission.substate = ms_garage_turn4;
            break;
         case ms_garage_turn4:
