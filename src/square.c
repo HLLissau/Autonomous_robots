@@ -4,7 +4,7 @@
  */
 #include "square.h"
 #define TEST 1
-#define COMPENSATE 1  // Set to 0 if simulate has to work, else 1
+#define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
 float BLACKLEVEL;
 
 enum {
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
     mot.w = odo.w;
     running = 1;
     mission.state = ms_init;
-    mission.substate = ms_init;
+    mission.substate = ms_box_measure_distance;
     mission.oldstate = -1;
     while (running) {
         if (lmssrv.config && lmssrv.status && lmssrv.connected) {
@@ -441,10 +441,10 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-             odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
+            // odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
-            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
+            // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
             if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
@@ -475,7 +475,7 @@ void update_motcon(motiontype *p) {
             if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
             }
-            double k = K2 + mot.speedcmd * 4;
+            double k = K2 + mot.speedcmd * 2;
             double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (k * odo.theta_ls);
@@ -711,10 +711,14 @@ int linedetection(double *intensity_array) {
 }
 
 double find_laser_min() {
-    double min = laserpar[0];
-    for (int i = 1; i < 9; i++) {
+    double min = laserpar[8];
+
+    double katete = 0.45;
+
+    for (int i = 8; i < 9; i++) {
         if (laserpar[i] < min) {
            min = laserpar[i];
+           min = sqrt((min * min) - (katete * katete));
         }
     }
     return min;
@@ -895,14 +899,14 @@ int substate_box(double dist) {
     int finished = 0;
     switch (mission.substate) {
         case ms_init:
-           mission.substate = ms_box_fwd;
+           mission.substate = ms_box_measure_distance;
         case ms_box_fwd:
            if (follow_line_left(.2, 0.2, mission.time_, 0))
                mission.substate = ms_box_measure_distance;
 
            break;
         case ms_box_measure_distance:;
-           if (mission.time_ < 20) {
+           if (mission.time_ < 100) {
                mission.substate = ms_box_measure_distance;
            } else {
                double min = find_laser_min();
@@ -910,16 +914,17 @@ int substate_box(double dist) {
                mission.substate = ms_box_follow_line_left;
                BLACKLEVEL = calculate_black_cutoff_point();
                printf("blacklevel: %f \n", BLACKLEVEL);
+               // mission.state= ms_end;
            }
            break;
         case ms_box_follow_line_left:
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
-               dist = 2;
+               dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.1, mission.time_, 0))
+           if (follow_line_left(dist, 0.3, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -928,7 +933,7 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
-               dist = 3.2;
+               dist = 2.2;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
            if (follow_line(dist, 0.2, mission.time_, 1, 0))
@@ -941,8 +946,10 @@ int substate_box(double dist) {
                printf("ref: %f, theta:%f , ls: %f", odo.theta_ref, odo.theta, odo.theta_ls);
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
-               speed = 0.3;
+               speed = 0.1;
                dist = 0.10;
+               mot.motorspeed_r=0;
+               mot.motorspeed_l=0;
            }
            if (fwd(dist, speed, mission.time_, 0, 0, 0))
                mission.substate = ms_box_reverse;
@@ -952,8 +959,9 @@ int substate_box(double dist) {
            if (mission.time_ == 0) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
-
-               speed = -0.4;
+               mot.motorspeed_r=0;
+               mot.motorspeed_l=0;
+               speed = -0.3;
                dist = -0.7;
            }
            if (rev(dist, speed, mission.time_))
