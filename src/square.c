@@ -925,7 +925,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.3, mission.time_, 0))
+           if (follow_line_left(dist, 0.1, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
