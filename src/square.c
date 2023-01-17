@@ -202,16 +202,16 @@ int main(int argc, char **argv) {
     rhdSync();
 
     odo.w = 0.256;
-    odo.cr = DELTA_M;
-    odo.cl = odo.cr;
+    odo.cr = DELTA_M * 0.975766;
+    odo.cl = DELTA_M;
     odo.left_enc = lenc->data[0];
     odo.right_enc = renc->data[0];
     reset_odo(&odo);
     printf("position: %f, %f\n", odo.left_pos, odo.right_pos);
     mot.w = odo.w;
     running = 1;
-    mission.state = ms_init;
-    mission.substate = ms_box_measure_distance;
+    mission.state = ms_gate;
+    mission.substate = ms_init;  // ms_box_measure_distance
     mission.oldstate = -1;
     while (running) {
         if (lmssrv.config && lmssrv.status && lmssrv.connected) {
@@ -409,9 +409,15 @@ void update_motcon(motiontype *p) {
             break;
         case mot_move:
             // 7.1 we change the motors to stay on course
-            odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
-            p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            odo.delta_v = (K * (odo.theta_ref - odo.theta));
+            printf("Turn error = %f\n", (odo.theta_ref - odo.theta));
+            if (odo.delta_v < 0) {
+                p->motorspeed_l = p->motorspeed_l;
+                p->motorspeed_r = p->motorspeed_l - odo.delta_v;
+            } else {
+                p->motorspeed_r = p->motorspeed_r;
+                p->motorspeed_l = p->motorspeed_r + odo.delta_v;
+            }
             // if (p->motorspeed_l<0) p->motorspeed_l=0;
             // if (p->motorspeed_r<0) p->motorspeed_r=0;
             //  3.5)
@@ -420,9 +426,9 @@ void update_motcon(motiontype *p) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
                 p->motorspeed_r = 0;
-            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
-                p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
-                p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+            } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d) || p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
+                if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                if (p->motorspeed_r > sqrt(2 * ACCELLERATION * d)) p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
             } else {
                 // 3.4.)
                 if (p->motorspeed_l < p->speedcmd) {
@@ -567,7 +573,7 @@ int fwd(double dist, double speed, int time_, int detect_line, int wall_detectio
         mot.cmd = mot_move;
         mot.speedcmd = speed;
         mot.dist = dist;
-        odo.theta_ref = odo.theta;
+        // odo.theta_ref = odo.theta;
         return 0;
     } else {
         if (detect_line && !mot.finished) {
@@ -614,6 +620,9 @@ int follow_line(double dist, double speed, int time_, int stop_at_cross, int gat
         if (gate_on_the_loose && !mot.finished) {
            mot.finished = detect_gate_on_the_loose();
         }
+        if (mot.finished) {
+           odo.theta_ref = odo.theta;
+        }
         return mot.finished;
     }
 }
@@ -627,6 +636,9 @@ int follow_line_left(double dist, double speed, int time_, int stop_at_cross) {
     } else {
         if (stop_at_cross && !mot.finished) {
            mot.finished = crossdetection(jarray);
+        }
+        if (mot.finished) {
+           odo.theta_ref = odo.theta;
         }
         return mot.finished;
     }
@@ -924,7 +936,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.3, mission.time_, 0))
+           if (follow_line_left(dist, 0.1, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -948,8 +960,8 @@ int substate_box(double dist) {
                odo.theta_ls = 0;
                speed = 0.1;
                dist = 0.10;
-               mot.motorspeed_r=0;
-               mot.motorspeed_l=0;
+               mot.motorspeed_r = 0;
+               mot.motorspeed_l = 0;
            }
            if (fwd(dist, speed, mission.time_, 0, 0, 0))
                mission.substate = ms_box_reverse;
@@ -959,8 +971,8 @@ int substate_box(double dist) {
            if (mission.time_ == 0) {
                odo.theta_ref = odo.theta;
                odo.theta_ls = 0;
-               mot.motorspeed_r=0;
-               mot.motorspeed_l=0;
+               mot.motorspeed_r = 0;
+               mot.motorspeed_l = 0;
                speed = -0.3;
                dist = -0.7;
            }
@@ -1062,7 +1074,7 @@ int substate_gate(double dist) {
            mission.substate = ms_gate_fwd1;
            break;
         case ms_gate_fwd1:
-           if (fwd(0.2, 0.3, mission.time_, 0, 0, 0))
+           if (fwd(2, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_gate_follow_line1;
            break;
         case ms_gate_follow_line1:
