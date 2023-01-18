@@ -567,9 +567,7 @@ void update_motcon(motiontype *p) {
                 //printf("accelerate  l: %f, r: %f \n",p->motorspeed_l,p->motorspeed_r);
                     
             }
-            // if (p->motorspeed_l<0) p->motorspeed_l=0;
-            // if (p->motorspeed_r<0) p->motorspeed_r=0;
-            //  3.5)
+            
 
             break;
       /*  case mot_follow_line2:;
@@ -1031,7 +1029,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.4, mission.time_, 0))
+           if (follow_line_left(dist, 0.5, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -1241,7 +1239,7 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_drive_to_line;
            break;
         case ms_double_gate_drive_to_line:
-           if (fwd(2.5, 0.3, mission.time_, 3, 0, 0)) {
+           if (fwd(2.5, 0.5, mission.time_, 3, 0, 0)) {
                odo.theta_ref = odo.theta;
                mission.substate = ms_double_gate_past_line;
            }
@@ -1258,7 +1256,7 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_rev;
            break;
         case ms_double_gate_rev:
-           if (follow_line(0.8, 0.3, mission.time_, 0, 0))
+           if (follow_line(0.8, 1.3, mission.time_, 0, 0))
                mission.substate = ms_double_gate_turn5;
            break;
         case ms_double_gate_turn5:
@@ -1269,7 +1267,7 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_follow_line;
            break;
         case ms_double_gate_follow_line:
-           if (follow_line(1.5, 0.3, mission.time_, 1, 0))
+           if (follow_line(1.5, 1.4, mission.time_, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -1287,7 +1285,7 @@ int substate_white_line(double dist) {
            mission.substate = ms_white_line_fwd1;
            break;
         case ms_white_line_fwd1:
-           if (fwd(0.60 + distance_to_white, 0.15, mission.time_, 0, 0, 0))
+           if (fwd(0.65 + distance_to_white, 0.2, mission.time_, 0, 0, 0))
                mission.substate = ms_white_line_turn0;
            break;
         case ms_white_line_turn0:
@@ -1298,7 +1296,7 @@ int substate_white_line(double dist) {
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_follow_line1:
-           if (follow_line_white(4.5, 0.3, mission.time_, 1))
+           if (follow_line_white(4.5, 0.5, mission.time_, 1))
                mission.substate = ms_white_line_fwd2;
            break;
         case ms_white_line_pause:

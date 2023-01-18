@@ -59,7 +59,7 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define ACCELLERATION 1.0
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 1
-#define K2 27
+#define K2 30
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
