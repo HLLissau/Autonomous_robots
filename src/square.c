@@ -4,11 +4,11 @@
  */
 #include "square.h"
 #define TEST 1
-#define COMPENSATE 1  // Set to 0 if simulate has to work, else 1
+#define COMPENSATE 0  // Set to 0 if simulate has to work, else 1
 #define BACTUAL 0.267012
 #define ED 0.975766
 
-#define STARTSTATE ms_garage
+#define STARTSTATE ms_init
 #define STARTSUBSTATE ms_init
 float BLACKLEVEL;
 
@@ -78,7 +78,7 @@ enum {
 };
 
 int main(int argc, char **argv) {
-    int arg, time_ = 0, opt, calibration;
+    int arg, time_ = 0, opt, calibration=0;
     double dist = 0, angle = 0;
     start = time(NULL);
     // install sighandlers
@@ -353,7 +353,7 @@ void update_odo(odotype *p) {
     stop = time(NULL);
     int time_used = stop - start;
     if (time_used == 1) {
-        BLACKLEVEL = calculate_black_cutoff_point();
+        //BLACKLEVEL = calculate_black_cutoff_point();
         // printf("blacklevel: %f \n", BLACKLEVEL);
     }
 }
@@ -410,7 +410,8 @@ void update_motcon(motiontype *p) {
 
     double d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
     double d_turn;
-
+    double k = K2* mot.speedcmd;
+            
     switch (p->curcmd) {
         case mot_stop:
             p->motorspeed_l = 0;
@@ -456,10 +457,17 @@ void update_motcon(motiontype *p) {
         case mot_rev:
             // 7.1 we change the motors to stay on course
             //  3.5)
-            // odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
+            odo.delta_v = (K * (odo.theta_ref - odo.theta)) / 2;
+            if (odo.delta_v < 0) {
+                p->motorspeed_l = p->motorspeed_l;
+                p->motorspeed_r = p->motorspeed_l + odo.delta_v;
+            } else {
+                p->motorspeed_r = p->motorspeed_r;
+                p->motorspeed_l = p->motorspeed_r - odo.delta_v;
+            }
+            
             d = p->dist - ((p->right_pos + p->left_pos) / 2 - p->startpos);
-            // p->motorspeed_l = p->motorspeed_l - odo.delta_v;
-            // p->motorspeed_r = p->motorspeed_r + odo.delta_v;
+            
             if ((p->right_pos + p->left_pos) / 2 - p->startpos < p->dist) {
                 p->finished = 1;
                 p->motorspeed_l = 0;
@@ -490,7 +498,88 @@ void update_motcon(motiontype *p) {
             if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
             }
-            double k = K2 + mot.speedcmd * 2;
+            // Calculations for
+            double ls = odo.COM;
+            odo.theta_ls = atan(ls / 0.25);
+            odo.delta_v = (k * odo.theta_ls);
+            double max_before_decelerate = sqrt(2 * ACCELLERATION * d);
+            //printf("Angle: %.8f  del_v: %.8f COM: %.8f  LS: %.8f\n", odo.theta_ls, odo.delta_v, odo.COM, ls);
+            if (odo.delta_v < 0) {  // check if we are turning left or right
+                // P controller. check if delta_v is larger than the current delta on the wheels
+                if (p->motorspeed_l - p->motorspeed_r < -odo.delta_v) {
+                    //printf("force decelerate \n");
+                    p->motorspeed_r = p->motorspeed_r - (TICK_ACCELLERATION * (1-odo.delta_v*10));  // we force deceleration
+                    if (p->motorspeed_r < 0) p->motorspeed_r = 0;                  // if wheel is going backwards, we set to 0
+                }
+
+                if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {  // check if we have traveled total distance
+                    p->finished = 1;
+                    p->motorspeed_l = 0;
+                    p->motorspeed_r = 0;
+                } else if (p->motorspeed_l > max_before_decelerate || p->motorspeed_r > max_before_decelerate) {  // Check if we need to decelerate
+                    //printf("decelerate\n");
+                    if (p->motorspeed_l > max_before_decelerate) p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                    if (p->motorspeed_r > max_before_decelerate) p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                } else {  // Acceleration
+                    if (p->motorspeed_l < p->speedcmd) {
+                        p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                    } else {
+                        p->motorspeed_l = p->speedcmd;
+                    }
+
+                    if (p->motorspeed_r < p->speedcmd) {
+                        p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                    } else {
+                        p->motorspeed_r = p->speedcmd;
+                    }
+                    //printf("accelerate  l: %f, r: %f \n",p->motorspeed_l,p->motorspeed_r);
+                    
+                }
+
+            } else {  // check if we are turning left or right
+                // P controller. check if delta_v is larger than the current delta on the wheels
+                if (p->motorspeed_r - p->motorspeed_l < odo.delta_v) {
+                    
+                    p->motorspeed_l = p->motorspeed_l - (TICK_ACCELLERATION *(1+odo.delta_v*10) );  // we force deceleration
+                    if (p->motorspeed_l < 0) p->motorspeed_l = 0;                  // if wheel is going backwards, we set to 0
+                }
+
+                if ((p->right_pos + p->left_pos) / 2 - p->startpos > p->dist) {  // check if we have traveled total distance
+                    p->finished = 1;
+                    p->motorspeed_l = 0;
+                    p->motorspeed_r = 0;
+                } else if (p->motorspeed_l > max_before_decelerate || p->motorspeed_r > max_before_decelerate) {  // Check if we need to decelerate
+                    if (p->motorspeed_l > max_before_decelerate) p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
+                    if (p->motorspeed_r > max_before_decelerate) p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
+                } else {  // Acceleration
+                    if (p->motorspeed_l < p->speedcmd) {
+                        p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
+                    } else {
+                        p->motorspeed_l = p->speedcmd;
+                    }
+
+                    if (p->motorspeed_r < p->speedcmd) {
+                        p->motorspeed_r = p->motorspeed_r + TICK_ACCELLERATION;
+                    } else {
+                        p->motorspeed_r = p->speedcmd;
+                    }
+                }
+                //printf("accelerate  l: %f, r: %f \n",p->motorspeed_l,p->motorspeed_r);
+                    
+            }
+            // if (p->motorspeed_l<0) p->motorspeed_l=0;
+            // if (p->motorspeed_r<0) p->motorspeed_r=0;
+            //  3.5)
+
+            break;
+      /*  case mot_follow_line2:;
+             
+            if (mot.follow_line_diff == 2) {
+                odo.COM = center_of_mass_white(jarray) * white_err;  // 7.3
+            }
+            if (mot.follow_line_diff == 1) {
+                odo.COM = center_of_mass_left(jarray);
+            }
             double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (k * odo.theta_ls);
@@ -513,9 +602,8 @@ void update_motcon(motiontype *p) {
            /* } else if (p->motorspeed_l > sqrt(2 * ACCELLERATION * d)) {  // same speed for each motor due to fwd
                 p->motorspeed_l = p->motorspeed_l - TICK_ACCELLERATION;
                 p->motorspeed_r = p->motorspeed_r - TICK_ACCELLERATION;
-            */}
-           else
-           {
+            }
+           else {
                // 3.4.)
                if (p->motorspeed_l < p->speedcmd) {
                    p->motorspeed_l = p->motorspeed_l + TICK_ACCELLERATION;
@@ -530,8 +618,7 @@ void update_motcon(motiontype *p) {
                }
            }
            break;
-
-           break;
+           */
         case mot_turn:
            d_turn = ((odo.theta_ref - odo.theta) * (odo.w / 2));
 
@@ -818,7 +905,6 @@ float center_of_mass_left(double *intensity_array) {
         if (intensity_array[i] > max_intensity)
            max_intensity = intensity_array[i];
     }
-
     for (int i = 7; i > -1; i--) {
         if (intensity_array[i] > BLACKLEVEL) {
            num += ((i - 3.5) * intensity_array[i] * LINESENSORDIST);
@@ -827,15 +913,15 @@ float center_of_mass_left(double *intensity_array) {
            num += ((i - 3.5) * max_intensity * LINESENSORDIST);
            den += max_intensity;
         } else {  // if line is black, we exchange i with i-1
-           num += ((i - 3.5) * (1 - intensity_array[i]) * LINESENSORDIST);
+           num += ((i - 3.5) * (1-intensity_array[i]) * LINESENSORDIST);
            den += (1 - intensity_array[i]);
            black_detected = 1;
         }
     }
     float res = num / den;
-    float error = 0;  // 0.001035; // An small numerical error measured through simulation
+    float error = -0.001021;  // 0.001035; // An small numerical error measured through simulation
     res = res + error;
-    // printf("%f \n", res);
+    //printf("%f \n", res);
 
     return (res);
 }
@@ -871,6 +957,7 @@ float calculate_black_cutoff_point() {
         }
     }
     float cutoff = total / count;
+    printf("blacklevel: %f\n",cutoff);
     return cutoff;
 }
 
@@ -944,7 +1031,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.1, mission.time_, 0))
+           if (follow_line_left(dist, 0.3, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -1171,7 +1258,7 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_rev;
            break;
         case ms_double_gate_rev:
-           if (follow_line(0.8, 0.2, mission.time_, 0, 0))
+           if (follow_line(0.8, 0.3, mission.time_, 0, 0))
                mission.substate = ms_double_gate_turn5;
            break;
         case ms_double_gate_turn5:
@@ -1182,7 +1269,7 @@ int substate_double_gate(double dist) {
                mission.substate = ms_double_gate_follow_line;
            break;
         case ms_double_gate_follow_line:
-           if (follow_line(1.5, 0.2, mission.time_, 1, 0))
+           if (follow_line(1.5, 0.3, mission.time_, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:

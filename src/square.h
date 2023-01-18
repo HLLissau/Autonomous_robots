@@ -56,10 +56,10 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define DEFAULT_ROBOTPORT 24902
 
 #define FREQUENCY 100
-#define ACCELLERATION 0.5
+#define ACCELLERATION 1.0
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
 #define K 1
-#define K2 2.7
+#define K2 27
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -143,6 +143,7 @@ enum {
     mot_move,
     mot_rev,
     mot_follow_line,
+    mot_follow_line2,
     mot_turn
 };
 
