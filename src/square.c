@@ -8,8 +8,8 @@
 #define BACTUAL 0.267012
 #define ED 0.975766
 
-#define STARTSTATE ms_garage
-#define STARTSUBSTATE ms_init
+#define STARTSTATE ms_double_gate
+#define STARTSUBSTATE ms_double_gate_follow_line
 float BLACKLEVEL;
 
 enum {
@@ -60,6 +60,8 @@ enum {
     ms_white_line_fwd2,
     ms_white_line_turn,
     ms_white_line_follow_line2,
+    ms_white_line_fwd3,
+    ms_garage_follow_line,
     ms_garage_fwd1,
     ms_garage_turn1,
     ms_garage_fwd2,
@@ -361,7 +363,7 @@ void update_odo(odotype *p) {
 #if COMPENSATE
 double turn_err = 0.0;
 double turn_err2 = 0.0;  // 0.12
-double white_err = 7.0;
+double white_err = 5;
 double distance_to_white = +0.08;
 #else
 double turn_err = 0.0;
@@ -375,7 +377,7 @@ void update_motcon(motiontype *p) {
     read_linesensor();      // added 7.2
     calibrateLinesensor();  // added 7.2 normaliserer linesensor og finder den mindste værdis placering.
     crossdetection(jarray);
-    odo.COM = center_of_mass(jarray);  // 7.3
+    // 7.3
 
     if (p->cmd != 0) {
         p->finished = 0;
@@ -486,11 +488,12 @@ void update_motcon(motiontype *p) {
         case mot_follow_line:;
             if (mot.follow_line_diff == 2) {
                 odo.COM = center_of_mass_white(jarray) * white_err;  // 7.3
-            }
-            if (mot.follow_line_diff == 1) {
+            } else if (mot.follow_line_diff == 1) {
                 odo.COM = center_of_mass_left(jarray);
+            } else {
+                odo.COM = center_of_mass(jarray);
             }
-            double k = K2 + mot.speedcmd * 2;
+            double k = K2 + mot.speedcmd * 10;
             double ls = odo.COM;
             odo.theta_ls = atan(ls / 0.25);
             odo.delta_v = (k * odo.theta_ls);
@@ -623,11 +626,14 @@ int follow_line(double dist, double speed, int time_, int stop_at_cross, int gat
         mot.follow_line_diff = 0;
         return 0;
     } else {
-        if (stop_at_cross && !mot.finished) {
+        if (stop_at_cross == 1 && !mot.finished) {
            mot.finished = crossdetection(jarray);
         }
         if (gate_on_the_loose && !mot.finished) {
            mot.finished = detect_gate_on_the_loose();
+        }
+        if (stop_at_cross == 2 && !mot.finished) {
+           mot.finished = detect_wall();
         }
         if (mot.finished) {
            odo.theta_ref = odo.theta;
@@ -941,10 +947,10 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
-               dist = 2.7;
+               dist = 2.9;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.1, mission.time_, 0))
+           if (follow_line_left(dist, 0.16, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -953,10 +959,10 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
-               dist = 2.2;
+               dist = 2;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, 0.2, mission.time_, 1, 0))
+           if (follow_line(dist, 0.1, mission.time_, 1, 0))
 
                mission.substate = ms_box_push;
 
@@ -1091,7 +1097,7 @@ int substate_gate(double dist) {
            break;
         case ms_gate_fwd2:
            // Unfortunately the sensor covers a zone of 20 degrees. Therefore we need as small corection of distance.
-           if (follow_line(0.67, 0.2, mission.time_, 0, 0))
+           if (follow_line(0.60, 0.2, mission.time_, 0, 0))
                mission.substate = ms_gate_turn;
            break;
         case ms_gate_turn:
@@ -1160,7 +1166,7 @@ int substate_double_gate(double dist) {
            }
            break;
         case ms_double_gate_past_line:
-           if (fwd(0.25, 0.3, mission.time_, 0, 0, 0))
+           if (fwd(0.3, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_double_gate_turn4;
            break;
         case ms_double_gate_turn4:
@@ -1211,7 +1217,7 @@ int substate_white_line(double dist) {
                mission.substate = ms_white_line_follow_line1;
            break;
         case ms_white_line_follow_line1:
-           if (follow_line_white(4.5, 0.3, mission.time_, 1))
+           if (follow_line_white(4.5, 0.25, mission.time_, 1))
                mission.substate = ms_white_line_fwd2;
            break;
         case ms_white_line_pause:
@@ -1236,6 +1242,10 @@ int substate_white_line(double dist) {
            break;
         case ms_white_line_follow_line2:
            if (follow_line(2, 0.15, mission.time_, 1, 0))
+               mission.substate = ms_white_line_fwd3;
+           break;
+        case ms_white_line_fwd3:
+           if (fwd(0.04, 0.15, mission.time_, 0, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -1250,10 +1260,10 @@ int substate_garage(double dist) {
     int finished = 0;
     switch (mission.substate) {
         case ms_init:
-           mission.substate = ms_garage_fwd1;
+           mission.substate = ms_garage_follow_line;
            break;
-        case ms_garage_fwd1:
-           if (fwd(0.5, 0.15, mission.time_, 0, 1, 0))
+        case ms_garage_follow_line:
+           if (follow_line(0.5, 0.15, mission.time_, 2, 0))
                mission.substate = ms_garage_turn1;
            break;
         case ms_garage_turn1:
@@ -1301,7 +1311,7 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd6;
            break;
         case ms_garage_fwd6:
-           if (fwd(1.5, 0.7, mission.time_, 0, 0, 0))
+           if (fwd(1.44, 0.7, mission.time_, 0, 0, 0))
                mission.substate = ms_garage_turn5;
            break;
         // move inside garage
@@ -1313,11 +1323,11 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd7;
            break;
         case ms_garage_fwd7:
-           if (fwd(0.5, 0.5, mission.time_, 1, 0, 0))
+           if (fwd(0.5, 0.5, mission.time_, 3, 0, 0))
                mission.substate = ms_garage_fwd8;
            break;
         case ms_garage_fwd8:
-           if (fwd(0.22, 0.5, mission.time_, 0, 0, 0))
+           if (fwd(0.25, 0.5, mission.time_, 0, 0, 0))
                mission.substate = ms_garage_turn6;
            break;
         case ms_garage_turn6:
@@ -1328,7 +1338,7 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd9;
            break;
         case ms_garage_fwd9:
-           if (follow_line(0.80, 0.1, mission.time_, 0, 0))
+           if (follow_line(1.1, 0.1, mission.time_, 2, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
