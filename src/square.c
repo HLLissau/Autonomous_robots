@@ -1031,7 +1031,7 @@ int substate_box(double dist) {
                dist = 2.7;
            }
            // if (mission.time % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line_left(dist, 0.3, mission.time_, 0))
+           if (follow_line_left(dist, 0.4, mission.time_, 0))
 
                mission.substate = ms_box_follow_line;
 
@@ -1104,7 +1104,7 @@ int substate_box(double dist) {
            // 7.3
            if (mission.time_ == 0) {
                odo.theta_ls = odo.theta_ref;
-               speed = 0.1;
+               speed = 0.3;
                dist = 1;
            }
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -1134,12 +1134,12 @@ int substate_box(double dist) {
            }
 
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
-           if (follow_line(dist, 0.15, mission.time_, 1, 0))
+           if (follow_line(dist, 0.3, mission.time_, 1, 0))
                mission.substate = ms_box_fwd4;
 
            break;
         case ms_box_fwd4:
-           if (fwd(0.2, 0.2, mission.time_, 0, 0, 0))
+           if (fwd(0.2, 0.3, mission.time_, 0, 0, 0))
                mission.substate = ms_box_follow_line3;
            break;
         case ms_box_follow_line3:
@@ -1147,7 +1147,7 @@ int substate_box(double dist) {
            if (mission.time_ == 0) {
                odo.theta_ls = 0;
                dist = 2;
-               speed = 0.2;
+               speed = 0.3;
            }
 
            // if (mission.time_ % 25 == 24) odo.theta_ls = odo.theta_ls + 0.1;
@@ -1322,7 +1322,7 @@ int substate_white_line(double dist) {
                mission.substate = ms_white_line_follow_line2;
            break;
         case ms_white_line_follow_line2:
-           if (follow_line(2, 0.15, mission.time_, 1, 0))
+           if (follow_line(2, 0.3, mission.time_, 1, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
@@ -1415,7 +1415,7 @@ int substate_garage(double dist) {
                mission.substate = ms_garage_fwd9;
            break;
         case ms_garage_fwd9:
-           if (follow_line(0.80, 0.1, mission.time_, 0, 0))
+           if (follow_line(0.80, 0.3, mission.time_, 0, 0))
                mission.substate = ms_end;
            break;
         case ms_end:
