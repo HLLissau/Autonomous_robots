@@ -58,8 +58,8 @@ symTableElement *getoutputref(const char *sym_name, symTableElement *tab) {
 #define FREQUENCY 100
 #define ACCELLERATION 0.5
 #define TICK_ACCELLERATION ACCELLERATION / FREQUENCY
-#define K 0.007
-#define K2 2.5
+#define K 1
+#define K2 2.7
 #define LINE_SENSOR_DATA_LENGTH 8
 #define LINESENSORDIST 0.0185
 
@@ -103,7 +103,7 @@ int follow_line_left(double dist, double speed, int time_, int follow);
 int follow_line_white(double dist, double speed, int time_, int follow);
 double find_laser_min();
 int crossdetection(double *array);
-int linedetection(double *array);
+int linedetection(double *array, int threshold);
 int detect_gate_on_the_loose();
 int detect_wall();
 int detect_wall_end();
